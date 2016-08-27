@@ -58,6 +58,7 @@ public class MainRender {
 			Display.setDisplayMode(new DisplayMode(width, height));
 			Display.setTitle("DICOM");
 			Display.create();
+			texture = loadTexture("pic");
 		} catch (LWJGLException e) {
 			System.err.println("The display wasn't initialized correctly. :(");
 			Display.destroy();
@@ -260,7 +261,7 @@ public class MainRender {
 			checkInput();
 			glClear(GL_COLOR_BUFFER_BIT);
 			texture.bind();
-			//render();		    
+			render(0, 150, 1);		    
 			
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++		    
 //		    int tex = glGenTextures();
@@ -308,7 +309,7 @@ public class MainRender {
 	}
 	
 	/**
-	 * Создание шедера
+	 * Создание шейдера
 	 * @param shaderName - название
 	 * @param isFragment - true, если фрагментный шейдер
 	 * @return
