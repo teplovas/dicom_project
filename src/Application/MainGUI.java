@@ -68,9 +68,10 @@ public class MainGUI extends Application {
 				File file = fileChooser.showOpenDialog(stage);
 				if (file != null) {
 					openFile(file);
-					MainRender.createDisplay(ImageHelper.getHeight(), ImageHelper.getWidth());
+					MainRender.createDisplay(ImageHelper.getDataBuffer(), ImageHelper.getHeight(), ImageHelper.getWidth());
 					from = ImageHelper.getMinValue();
 					to = ImageHelper.getMaxValue();
+					//MainRender.createTexture(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight());
 					MainRender.loadAndPrepareShaders(from, to, 1);
 					darknessSlider.setMax(to);
 					darknessSlider.setMin(from);

@@ -20,6 +20,11 @@ public class ImageHelper <T> {
 		return ConvertTools.getMinValue();
 	}
 	
+	public static Object[] getDataBuffer()
+	{
+		return imageDataBuffer;
+	}
+	
 	public static Image openImage(String fileName) throws Exception
 	{
 		imageDataBuffer = ConvertTools.readDicomFile(fileName); 
