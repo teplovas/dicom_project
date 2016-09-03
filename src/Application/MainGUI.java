@@ -68,11 +68,12 @@ public class MainGUI extends Application {
 				File file = fileChooser.showOpenDialog(stage);
 				if (file != null) {
 					openFile(file);
-					MainRender.createDisplay(ImageHelper.getDataBuffer(), ImageHelper.getHeight(), ImageHelper.getWidth());
+					MainRender.tmpFunc(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight(),
+							ImageHelper.getMinValue(), ImageHelper.getMaxValue());
 					from = ImageHelper.getMinValue();
 					to = ImageHelper.getMaxValue();
 					//MainRender.createTexture(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight());
-					MainRender.loadAndPrepareShaders(from, to, 1);
+					//MainRender.loadAndPrepareShaders(from, to, 1);
 					darknessSlider.setMax(to);
 					darknessSlider.setMin(from);
 					currentScale = 1.0;
