@@ -14,6 +14,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.Util;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +26,8 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import javax.imageio.ImageIO;
+
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 import org.newdawn.slick.opengl.Texture;
@@ -35,15 +38,37 @@ import net.sourceforge.fastpng.PNGDecoder;
 import net.sourceforge.fastpng.PNGDecoder.TextureFormat;
 import tools.PaletteLoader;
 
-///** 
-// * @author teplova.s 
-// * */
+/** 
+ * @author teplova.s 
+ * */
 public class MainRender {
 	
 	private static int min;
 	private static int max;
+	static int shaderProgramInterval;
 	
 	public static void main(String[] args){
+		int[][] palette  = PaletteLoader.getPalette(2);
+		BufferedImage newImage = new BufferedImage(palette.length, 1,
+				BufferedImage.TYPE_INT_RGB);
+
+		for(int i = 0; i < palette.length; i++)
+		{
+			int r = palette[i][0];
+			int g = palette[i][1];
+			int b = palette[i][2];
+
+			int newRgb = ((r & 0x0ff) << 16) | ((g & 0x0ff) << 8)
+					| (b & 0x0ff);
+			newImage.setRGB(i, 0, newRgb);
+		}
+		try {
+			ImageIO.write(newImage, "PNG", new File("res/pet.PNG"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		/*
 		int width = 640;
 		int height = 480;
 		int shaderProgramInterval;
@@ -109,12 +134,11 @@ public class MainRender {
 
 	Display.destroy();
 	System.exit(0);
-		
+	*/	
 	}
 	
 	public static void tmpFunc(Object[] imageBuffer, int width, int height, int min, int max)
-	{
-		int shaderProgramInterval;
+	{		
 		try {
 		Display.setDisplayMode(new DisplayMode(640, 480));
 		Display.setTitle("DICOM");
@@ -184,32 +208,71 @@ public class MainRender {
 	System.exit(0);
 	}
 
-	private static void genTexture(Object[] imageBuffer, int width, int height, int min, int max) {
-		IntBuffer texture_object_handles = BufferUtils.createIntBuffer(1);
+	private static IntBuffer genTexture(Object[] imageBuffer, int width, int height, int min, int max) {
+		IntBuffer texture_object_handles = BufferUtils.createIntBuffer(2);
 		glGenTextures(texture_object_handles);
 
-		for (int i = 0; i < 1; ++i) {
+		for (int i = 0; i < 2; ++i) {
+			glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture" + (1 + i)), i);
 			Util.checkGLError();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
 			Util.checkGLError();
 			int id = texture_object_handles.get(i);
-			glBindTexture(GL_TEXTURE_2D, id);
-			Util.checkGLError();
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			Util.checkGLError();
-			IntBuffer buffer = BufferUtils.createIntBuffer(imageBuffer.length);
-			Integer b;
-			for(Object o : imageBuffer)
+			
+			if(i == 0)
 			{
-				byte by = (byte)o;
-				//b = new Integer();
-				buffer.put(((int)by));
+				glBindTexture(GL_TEXTURE_2D, id);
+				Util.checkGLError();
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				Util.checkGLError();
+				ByteBuffer buffer = BufferUtils.createByteBuffer(imageBuffer.length);
+				Integer b;
+				for(Object o : imageBuffer)
+				{
+					byte by = (byte)o;
+					//b = new Integer();
+					buffer.put((by));
+				}
+				buffer.flip();
+				Util.checkGLError();
+				glTexImage2D(GL_TEXTURE_2D, 0, GL30.GL_R32I, width, height, 0, GL30.GL_RED_INTEGER, GL_BYTE, buffer);
 			}
-			buffer.flip();
-			Util.checkGLError();
-			glTexImage2D(GL_TEXTURE_2D, 0, GL30.GL_R32I, width, height, 0, GL30.GL_RED_INTEGER, GL_INT, buffer);
+			else
+			{
+				glBindTexture(GL_TEXTURE_1D, id);
+				Util.checkGLError();
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				Util.checkGLError();
+				ByteBuffer buf = null;
+				PNGDecoder decoder = null;
+				try {
+					InputStream in = new FileInputStream("res/pet.PNG");
+				   decoder = new PNGDecoder(in);
+				 
+				   width = decoder.getWidth();
+				   height = decoder.getHeight();
+//				   System.out.println("width="+decoder.getWidth());
+//				   System.out.println("height="+decoder.getHeight());
+				 
+				   buf = ByteBuffer.allocateDirect(4*decoder.getWidth()*decoder.getHeight());
+				   decoder.decode(buf, decoder.getWidth()*4, TextureFormat.RGBA);
+				   buf.flip();
+				}
+				catch(Exception e)
+				{
+					
+				}
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA8, decoder.getWidth(), 0, GL_RGBA, GL_BYTE, buf);
+			}
 			Util.checkGLError();
 		}
+		return texture_object_handles;
+	}
+	
+	private static void getPaletteTexture(int paletteType)
+	{
+		Texture tex = loadTexture("hotIron");
+		tex.bind();
 	}
 	
 	//
@@ -632,20 +695,18 @@ public class MainRender {
 //		}
 //	}
 //
-////	private static Texture loadTexture(String fileName) {
-////		try {
-////			Texture tex = TextureLoader.getTexture("PNG", new FileInputStream(new File("res/" + fileName + ".png")));
-////			width = tex.getImageWidth();
-////			height = tex.getImageHeight();
-////			return tex;
-////
-////		} catch (FileNotFoundException e) {
-////			System.err.println("There is no file " + fileName + " in folder 'res'");
-////		} catch (IOException e) {
-////			System.err.println("Can't open file " + fileName);
-////		}
-////		return null;
-////	}
+	private static Texture loadTexture(String fileName) {
+		try {
+			Texture tex = TextureLoader.getTexture("PNG", new FileInputStream(new File("res/" + fileName + ".png")));
+			return tex;
+
+		} catch (FileNotFoundException e) {
+			System.err.println("There is no file " + fileName + " in folder 'res'");
+		} catch (IOException e) {
+			System.err.println("Can't open file " + fileName);
+		}
+		return null;
+	}
 //	
 
 }
