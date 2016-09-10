@@ -50,6 +50,7 @@ public class MainRender {
 	private static String paletteName = "hotIron";
 	
 	private static int paletteId = 0;
+	private static Texture paletteTexture;
 	
 	private static int imageTextureId = 0;
 	private static int paletteTextureId = 0;
@@ -235,9 +236,6 @@ public class MainRender {
 		try{
 		for (int i = 0; i < 5; i++) 
 		{
-			Util.checkGLError();
-			Util.checkGLError();
-			
 			if(i == 0)
 			{
 				glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture1"), i);
@@ -270,27 +268,25 @@ public class MainRender {
 				   width = decoder.getWidth();
 				   height = decoder.getHeight();
 				 
-				   buf = BufferUtils.createByteBuffer(3 * width * height);
-				   decoder.decode(buf, width*3, PNGDecoder.TextureFormat.RGB);
+				   buf = BufferUtils.createByteBuffer(4 * width * height);
+				   decoder.decode(buf, width*4, PNGDecoder.TextureFormat.RGBA);
 				   buf.flip();
 				}
 				catch(Exception e)
-				{		
-				}
+				{}
 				finally
 				{
 					in.close();
 				}
 				palettes[i - 1] = texture_object_handles.get(i);
-				   System.out.println((i - 1)+ ": " + getPaletteTexture(i));
-				//paletteTextureId = texture_object_handles.get(i);
+
 				glBindTexture(GL_TEXTURE_1D, palettes[i - 1]);
 				Util.checkGLError();
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				Util.checkGLError();
 				
 	//			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, decoder.getWidth(), 0, GL_RGB, GL_BYTE, buf);
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, decoder.getWidth(), 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 			}
 			Util.checkGLError();
 		}
