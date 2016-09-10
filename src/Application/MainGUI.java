@@ -65,11 +65,10 @@ public class MainGUI extends Application {
 		openButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(final ActionEvent e) {
-				File file = fileChooser.showOpenDialog(stage);
+				File file = new File("d://image.dcm");//fileChooser.showOpenDialog(stage);
 				if (file != null) {
 					openFile(file);
-					MainRender.tmpFunc(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight(),
-							ImageHelper.getMinValue(), ImageHelper.getMaxValue());
+					MainRender.tmpFunc(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight());
 					from = ImageHelper.getMinValue();
 					to = ImageHelper.getMaxValue();
 					//MainRender.createTexture(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight());
@@ -109,19 +108,19 @@ public class MainGUI extends Application {
 			public void changed(ObservableValue ov, String t, String t1) {
 				switch (ov.getValue().toString()) {
 				case "Hot Iron Color Palette": {
-					changeColorOfImage(1);
+					MainRender.changePalette("hotIron");//changeColorOfImage(1);
 					break;
 				}
 				case "PET Color Palette": {
-					changeColorOfImage(2);
+					MainRender.changePalette("pet");//changeColorOfImage(2);
 					break;
 				}
 				case "Hot Metal Blue Color Palette": {
-					changeColorOfImage(3);
+					MainRender.changePalette("hotMetalBlue");//changeColorOfImage(3);
 					break;
 				}
 				case "PET 20 Step Color Palette": {
-					changeColorOfImage(4);
+					MainRender.changePalette("pet20");//changeColorOfImage(4);
 					break;
 				}
 				case "Default Color Palette": {

@@ -13,6 +13,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.Util;
+import org.lwjgl.util.glu.GLU;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -46,11 +47,19 @@ public class MainRender {
 	private static int min;
 	private static int max;
 	static int shaderProgramInterval;
+	private static String paletteName = "hotIron";
+	
+	private static int paletteId = 0;
+	
+	private static int imageTextureId = 0;
+	private static int paletteTextureId = 0;
+	
+	private static int[] palettes = new int[4];
 	
 	public static void main(String[] args){
-		int[][] palette  = PaletteLoader.getPalette(2);
+		int[][] palette  = PaletteLoader.getPalette(1);
 		BufferedImage newImage = new BufferedImage(palette.length, 1,
-				BufferedImage.TYPE_INT_RGB);
+				BufferedImage.TYPE_3BYTE_BGR);
 
 		for(int i = 0; i < palette.length; i++)
 		{
@@ -63,7 +72,7 @@ public class MainRender {
 			newImage.setRGB(i, 0, newRgb);
 		}
 		try {
-			ImageIO.write(newImage, "PNG", new File("res/pet.PNG"));
+			ImageIO.write(newImage, "PNG", new File("res/hotIron.PNG"));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -137,7 +146,7 @@ public class MainRender {
 	*/	
 	}
 	
-	public static void tmpFunc(Object[] imageBuffer, int width, int height, int min, int max)
+	public static void tmpFunc(Object[] imageBuffer, int width, int height)
 	{		
 		try {
 		Display.setDisplayMode(new DisplayMode(640, 480));
@@ -148,7 +157,7 @@ public class MainRender {
 		Display.destroy();
 		System.exit(1);
 	}
-		shaderProgramInterval = glCreateProgram();
+	shaderProgramInterval = glCreateProgram();
 		
 	int fragmentShaderInterval = createShader("shaderWindow.frag", true);
 	int vertexShaderInterval = createShader("shaderWindow.vert", false);
@@ -159,47 +168,58 @@ public class MainRender {
 	glLinkProgram(shaderProgramInterval);
 	glValidateProgram(shaderProgramInterval);
 	
-		while (!Display.isCloseRequested()) {
-//		checkInput();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, 640, 480, 0, 1, -1);
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_TEXTURE_1D);
+	glUseProgram(shaderProgramInterval);
+	genTexture(imageBuffer, width, height);
+	while (!Display.isCloseRequested()) 
+	{
+		checkInput();
 		glClearColor(.5f, .5f, 0f, 1f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glUseProgram(shaderProgramInterval);
 		Util.checkGLError();
-	    int locFrom = glGetUniformLocation(shaderProgramInterval, "from");
-	    int locTo = glGetUniformLocation(shaderProgramInterval, "to");
-	    Util.checkGLError();
-	    glUniform1i(locFrom, -128);
-	    glUniform1i(locTo, 127);
-	    Util.checkGLError();
-	    glUniform1i(glGetUniformLocation(shaderProgramInterval, "min"), min);
-	    glUniform1i(glGetUniformLocation(shaderProgramInterval, "max"), max);
-	    Util.checkGLError();
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0, 640, 480, 0, 1, -1);
-		glMatrixMode(GL_MODELVIEW);
-		glEnable(GL_TEXTURE_2D);
-//		glEnable(GL_TEXTURE_1D);
-		glColor3f(0f, 1f, 0f);
-		genTexture(imageBuffer, width, height, min, max);
+		glUniform1i(glGetUniformLocation(shaderProgramInterval, "from"), -128);
+		glUniform1i(glGetUniformLocation(shaderProgramInterval, "to"), 127);
+		Util.checkGLError();
+		glUniform1i(glGetUniformLocation(shaderProgramInterval, "width"), width);
+		glUniform1i(glGetUniformLocation(shaderProgramInterval, "height"), height);
+		Util.checkGLError();
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
+		GL11.glBindTexture(GL_TEXTURE_2D, imageTextureId);
+		
+		glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture2"), palettes[paletteId] - 1);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + paletteId + 1);
+		glBindTexture(GL_TEXTURE_1D, palettes[paletteId]);
+		
 		glBegin(GL_QUADS);
 			glTexCoord2d(0, 0);
 			glVertex2i(0, 0);
-
+		
 			glTexCoord2d(1, 0);
 			glVertex2i(width, 0);
-
+		
 			glTexCoord2d(1, 1);
 			glVertex2i(width, height);
-
+		
 			glTexCoord2d(0, 1);
 			glVertex2i(0, height);
 		glEnd();
-//
+		//
 		glUseProgram(0);
-		Display.update();
 		Display.sync(60);
+		Display.update();
+		
 	}
+	GL11.glDeleteTextures(palettes[0]);
+	GL11.glDeleteTextures(palettes[1]);
+	GL11.glDeleteTextures(palettes[2]);
+	GL11.glDeleteTextures(palettes[3]);
 	glDeleteProgram(shaderProgramInterval);
 	glDeleteShader(vertexShaderInterval);
 	glDeleteShader(fragmentShaderInterval);
@@ -207,30 +227,30 @@ public class MainRender {
 	Display.destroy();
 	System.exit(0);
 	}
-
-	private static IntBuffer genTexture(Object[] imageBuffer, int width, int height, int min, int max) {
-		IntBuffer texture_object_handles = BufferUtils.createIntBuffer(2);
+	
+	private static IntBuffer genTexture(Object[] imageBuffer, int width, int height) {
+		
+		IntBuffer texture_object_handles = BufferUtils.createIntBuffer(5);
 		glGenTextures(texture_object_handles);
-
-		for (int i = 0; i < 2; ++i) {
-			glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture" + (1 + i)), i);
+		try{
+		for (int i = 0; i < 5; i++) 
+		{
 			Util.checkGLError();
-			GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
 			Util.checkGLError();
-			int id = texture_object_handles.get(i);
 			
 			if(i == 0)
 			{
-				glBindTexture(GL_TEXTURE_2D, id);
+				glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture1"), i);
+				GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
+				imageTextureId = texture_object_handles.get(i);
+				glBindTexture(GL_TEXTURE_2D, imageTextureId);
 				Util.checkGLError();
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				Util.checkGLError();
 				ByteBuffer buffer = BufferUtils.createByteBuffer(imageBuffer.length);
-				Integer b;
 				for(Object o : imageBuffer)
 				{
 					byte by = (byte)o;
-					//b = new Integer();
 					buffer.put((by));
 				}
 				buffer.flip();
@@ -239,42 +259,84 @@ public class MainRender {
 			}
 			else
 			{
-				glBindTexture(GL_TEXTURE_1D, id);
-				Util.checkGLError();
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				Util.checkGLError();
+				GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
 				ByteBuffer buf = null;
 				PNGDecoder decoder = null;
+				InputStream in = null;
 				try {
-					InputStream in = new FileInputStream("res/pet.PNG");
+					in = new FileInputStream("res/" + getPaletteTexture(i) + ".PNG");
 				   decoder = new PNGDecoder(in);
 				 
 				   width = decoder.getWidth();
 				   height = decoder.getHeight();
-//				   System.out.println("width="+decoder.getWidth());
-//				   System.out.println("height="+decoder.getHeight());
 				 
-				   buf = ByteBuffer.allocateDirect(4*decoder.getWidth()*decoder.getHeight());
-				   decoder.decode(buf, decoder.getWidth()*4, TextureFormat.RGBA);
+				   buf = BufferUtils.createByteBuffer(3 * width * height);
+				   decoder.decode(buf, width*3, PNGDecoder.TextureFormat.RGB);
 				   buf.flip();
 				}
 				catch(Exception e)
-				{
-					
+				{		
 				}
-				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA8, decoder.getWidth(), 0, GL_RGBA, GL_BYTE, buf);
+				finally
+				{
+					in.close();
+				}
+				palettes[i - 1] = texture_object_handles.get(i);
+				   System.out.println((i - 1)+ ": " + getPaletteTexture(i));
+				//paletteTextureId = texture_object_handles.get(i);
+				glBindTexture(GL_TEXTURE_1D, palettes[i - 1]);
+				Util.checkGLError();
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				Util.checkGLError();
+				
+	//			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, decoder.getWidth(), 0, GL_RGB, GL_BYTE, buf);
 			}
 			Util.checkGLError();
+		}
+		}
+		catch(Exception e)
+		{
 		}
 		return texture_object_handles;
 	}
 	
-	private static void getPaletteTexture(int paletteType)
+	private static String getPaletteTexture(int paletteType)
 	{
-		Texture tex = loadTexture("hotIron");
-		tex.bind();
+		switch (paletteType) {
+		case 1: {
+			return "hotIron";
+		}
+		case 2: {
+			return "pet";
+		}
+		case 3: {
+			return "hotMetalBlue";
+		}
+		case 4: {
+			return "pet20";
+		}
+		}
+		return "hotIron";
 	}
 	
+	public static void changePalette(String paletteName)
+	{
+		MainRender.paletteName = paletteName;
+	}
+	
+	
+	private static void exitOnGLError(String errorMessage) {
+        int errorValue = GL11.glGetError();
+         
+        if (errorValue != GL11.GL_NO_ERROR) {
+            String errorString = GLU.gluErrorString(errorValue);
+            System.err.println("ERROR - " + errorMessage + ": " + errorString);
+             
+            if (Display.isCreated()) Display.destroy();
+            System.exit(-1);
+        }
+    }
 	//
 //	private static Texture texture;
 //
@@ -667,34 +729,53 @@ public class MainRender {
 //		
 //	}
 //
-//	private static void checkInput() {
-//		switch (state) {
-//		case NORMAL:
-//			if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-//				state = State.HOT_IRON;
-//			}
-//			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-//				state = State.HOT_METAL_BLUE;
-//			}
-//			break;
-//		case HOT_IRON:
-//			if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-//				state = State.NORMAL;
-//			}
-//			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-//				state = State.HOT_METAL_BLUE;
-//			}
-//			break;
-//		case HOT_METAL_BLUE:
-//			if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-//				state = State.NORMAL;
-//			}
-//			if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-//				state = State.HOT_IRON;
-//			}
-//		}
-//	}
-//
+	private static void checkInput() {
+		switch (paletteId) {
+		case 0:
+			if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+				paletteId = 2;
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+				paletteId = 3;
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+				paletteId = 1;
+			}
+			break;
+		case 1:
+			if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+				paletteId = 2;
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+				paletteId = 3;
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+				paletteId = 0;
+			}
+			break;
+		case 2:
+			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+				paletteId = 3;
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+				paletteId = 0;
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+				paletteId = 1;
+			}
+		case 3:
+			if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+				paletteId = 2;
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+				paletteId = 0;
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+				paletteId = 1;
+			}
+		}
+	}
+////
 	private static Texture loadTexture(String fileName) {
 		try {
 			Texture tex = TextureLoader.getTexture("PNG", new FileInputStream(new File("res/" + fileName + ".png")));
