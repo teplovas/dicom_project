@@ -15,6 +15,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.Util;
 import org.lwjgl.util.glu.GLU;
 
+import java.awt.Canvas;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,6 +29,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import javax.imageio.ImageIO;
+import javax.swing.JPanel;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -35,6 +37,15 @@ import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureImpl;
 import org.newdawn.slick.opengl.TextureLoader;
 
+import com.sun.javafx.geom.BaseBounds;
+import com.sun.javafx.geom.transform.BaseTransform;
+import com.sun.javafx.jmx.MXNodeAlgorithm;
+import com.sun.javafx.jmx.MXNodeAlgorithmContext;
+import com.sun.javafx.sg.prism.NGNode;
+
+import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Region;
 import net.sourceforge.fastpng.PNGDecoder;
 import net.sourceforge.fastpng.PNGDecoder.TextureFormat;
 import tools.PaletteLoader;
@@ -42,7 +53,7 @@ import tools.PaletteLoader;
 /** 
  * @author teplova.s 
  * */
-public class MainRender {
+public class MainRender{
 	
 	private static int min;
 	private static int max;
@@ -56,6 +67,12 @@ public class MainRender {
 	private static int paletteTextureId = 0;
 	
 	private static int[] palettes = new int[4];
+	private static boolean closeRequested = false;
+	
+	public MainRender(Object[] imageBuffer, int width, int height, Canvas canv)
+	{
+		tmpFunc(imageBuffer, width, height, canv);
+	}
 	
 	public static void main(String[] args){
 		int[][] palette  = PaletteLoader.getPalette(1);
@@ -78,80 +95,13 @@ public class MainRender {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		/*
-		int width = 640;
-		int height = 480;
-		int shaderProgramInterval;
-		try {
-		Display.setDisplayMode(new DisplayMode(640, 480));
-		Display.setTitle("DICOM");
-		Display.create();
-	} catch (LWJGLException e) {
-		System.err.println("The display wasn't initialized correctly. :(");
-		Display.destroy();
-		System.exit(1);
-	}
-		shaderProgramInterval = glCreateProgram();
-		
-	int fragmentShaderInterval = createShader("shaderWindow.frag", true);
-	int vertexShaderInterval = createShader("shaderWindow.vert", false);
-	
-	glAttachShader(shaderProgramInterval, vertexShaderInterval);
-	glAttachShader(shaderProgramInterval, fragmentShaderInterval);
-	
-	glLinkProgram(shaderProgramInterval);
-	glValidateProgram(shaderProgramInterval);
-	
-		while (!Display.isCloseRequested()) {
-//		checkInput();
-		glClearColor(.5f, .5f, 0f, 1f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glUseProgram(shaderProgramInterval);
-	    int locFrom = glGetUniformLocation(shaderProgramInterval, "from");
-	    int locTo = glGetUniformLocation(shaderProgramInterval, "to");
-	    glUniform1f(locFrom, .5f);
-	    glUniform1f(locTo, .5f);
-	    		
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0, 640, 480, 0, 1, -1);
-		glMatrixMode(GL_MODELVIEW);
-		glEnable(GL_TEXTURE_2D);
-//		glEnable(GL_TEXTURE_1D);
-		glColor3f(0f, 1f, 0f);
-		//genTexture();
-		glBegin(GL_QUADS);
-			glTexCoord2d(0, 0);
-			glVertex2i(0, 0);
-
-			glTexCoord2d(1, 0);
-			glVertex2i(width, 0);
-
-			glTexCoord2d(1, 1);
-			glVertex2i(width, height);
-
-			glTexCoord2d(0, 1);
-			glVertex2i(0, height);
-		glEnd();
-//
-		glUseProgram(0);
-		Display.update();
-		Display.sync(60);
-	}
-	glDeleteProgram(shaderProgramInterval);
-	glDeleteShader(vertexShaderInterval);
-	glDeleteShader(fragmentShaderInterval);
-
-	Display.destroy();
-	System.exit(0);
-	*/	
 	}
 	
-	public static void tmpFunc(Object[] imageBuffer, int width, int height)
+	public static ByteBuffer tmpFunc(Object[] imageBuffer, int width, int height, Canvas canv)
 	{		
 		try {
-		Display.setDisplayMode(new DisplayMode(640, 480));
-		Display.setTitle("DICOM");
+			Display.setParent(canv);
+	        Display.setVSyncEnabled(true);
 		Display.create();
 	} catch (LWJGLException e) {
 		System.err.println("The display wasn't initialized correctly. :(");
@@ -177,7 +127,7 @@ public class MainRender {
 	glEnable(GL_TEXTURE_1D);
 	glUseProgram(shaderProgramInterval);
 	genTexture(imageBuffer, width, height);
-	while (!Display.isCloseRequested()) 
+	while (!Display.isCloseRequested() && !closeRequested) 
 	{
 		checkInput();
 		glClearColor(.5f, .5f, 0f, 1f);
@@ -198,6 +148,9 @@ public class MainRender {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + paletteId + 1);
 		glBindTexture(GL_TEXTURE_1D, palettes[paletteId]);
 		
+		//========================================================================
+				
+			    
 		glBegin(GL_QUADS);
 			glTexCoord2d(0, 0);
 			glVertex2i(0, 0);
@@ -211,8 +164,14 @@ public class MainRender {
 			glTexCoord2d(0, 1);
 			glVertex2i(0, height);
 		glEnd();
-		//
-		glUseProgram(0);
+		
+		
+		
+		ByteBuffer bytes = BufferUtils.createByteBuffer(width * height * 4);
+	    //GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
+	    glGetTexImage(GL_TEXTURE_2D, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
+		//========================================================================
+	    glUseProgram(0);
 		Display.sync(60);
 		Display.update();
 		
@@ -227,6 +186,12 @@ public class MainRender {
 
 	Display.destroy();
 	System.exit(0);
+	return null;
+	}
+	
+	public static void destroy()
+	{
+		closeRequested = true;
 	}
 	
 	private static IntBuffer genTexture(Object[] imageBuffer, int width, int height) {
@@ -316,9 +281,28 @@ public class MainRender {
 		return "hotIron";
 	}
 	
+	private static Integer getPaletteId(String palette)
+	{
+		switch (palette) {
+		case "hotIron": {
+			return 0;
+		}
+		case "pet": {
+			return 1;
+		}
+		case "hotMetalBlue": {
+			return 2;
+		}
+		case "pet20": {
+			return 3;
+		}
+		}
+		return 0;
+	}
+	
 	public static void changePalette(String paletteName)
 	{
-		MainRender.paletteName = paletteName;
+		paletteId = getPaletteId(paletteName);
 	}
 	
 	
@@ -784,6 +768,5 @@ public class MainRender {
 		}
 		return null;
 	}
-//	
 
 }
