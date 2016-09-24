@@ -217,7 +217,6 @@ public class TestFrame {
 				}
 			}
 		});
-		
 
 		try {
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

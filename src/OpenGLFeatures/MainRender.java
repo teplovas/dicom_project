@@ -1,5 +1,6 @@
 package OpenGLFeatures;
 
+import org.eclipse.swt.internal.ole.win32.ISpecifyPropertyPages;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -19,8 +20,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 import javax.imageio.ImageIO;
 
@@ -58,6 +61,7 @@ public class MainRender{
 	private static int from;
 	private static int to;
 	private static boolean isUsePalette = false;
+	private static boolean isImageChanged = false;
 	
 	
 	public MainRender(Object[] imageBuffer, int width, int height, Canvas canv)
@@ -163,7 +167,7 @@ public class MainRender{
 	
 	private static void loadImage(Object[] imageBuffer, int width, int height)
 	{
-		if(imageBuffer == null)
+		if(imageBuffer == null || !isImageChanged)
 			return;
 		
 		Util.checkGLError();
@@ -175,16 +179,43 @@ public class MainRender{
 		Util.checkGLError();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		Util.checkGLError();
-		ByteBuffer buffer = BufferUtils.createByteBuffer(imageBuffer.length);
-		for(Object o : imageBuffer)
+		boolean isByte = false;
+		Buffer buffer;// = BufferUtils.createByteBuffer(imageBuffer.length);
+		if(imageBuffer[0] instanceof Byte)
 		{
-			byte by = (byte)o;
-			buffer.put((by));
+			isByte = true;
+			buffer = BufferUtils.createByteBuffer(imageBuffer.length);
+			for(Object o : imageBuffer)
+			{
+				byte by = (byte)o;
+				((ByteBuffer)buffer).put((by));
+			}
 		}
+		else
+		{
+			buffer = BufferUtils.createShortBuffer(imageBuffer.length);
+			for(Object o : imageBuffer)
+			{
+				short by = (short)o;
+				((ShortBuffer)buffer).put((by));
+			}
+		}
+		
 		buffer.flip();
 		Util.checkGLError();
-		glTexImage2D(GL_TEXTURE_2D, 0, GL30.GL_R32I, width, height, 0, GL30.GL_RED_INTEGER, GL_BYTE, buffer);
+		if(isByte)
+		{
+			GL11.glTexImage2D(GL_TEXTURE_2D, 0, GL30.GL_R32I, width, height, 0, GL30.GL_RED_INTEGER, 
+					GL_BYTE, (ByteBuffer)buffer);
+		}
+		else
+		{
+			GL11.glTexImage2D(GL_TEXTURE_2D, 0, GL30.GL_R32I, width, height, 0, GL30.GL_RED_INTEGER, 
+					GL_SHORT, (ShortBuffer)buffer);
+		}
+		System.out.println("Image loaded!!");
 		isImageLoad = true;
+		isImageChanged = false;
 	}
 	
 	
@@ -255,9 +286,11 @@ public class MainRender{
 		System.exit(0);
 	}
 	
+	
 	public static void setImageBuffer(Object[] imageBuffer)
 	{
 		MainRender.imageBuffer = imageBuffer;
+		MainRender.isImageChanged = true;
 	}
 	
 	public static void setWidth(int width)
