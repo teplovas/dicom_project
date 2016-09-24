@@ -68,6 +68,7 @@ public class MainRender{
 	
 	private static int[] palettes = new int[4];
 	private static boolean closeRequested = false;
+	private static float scale = 1.0f;
 	
 	public MainRender(Object[] imageBuffer, int width, int height, Canvas canv)
 	{
@@ -97,7 +98,7 @@ public class MainRender{
 		}
 	}
 	
-	public static ByteBuffer tmpFunc(Object[] imageBuffer, int width, int height, Canvas canv)
+	public static void tmpFunc(Object[] imageBuffer, int width, int height, Canvas canv)
 	{		
 		try {
 			Display.setParent(canv);
@@ -130,10 +131,11 @@ public class MainRender{
 	while (!Display.isCloseRequested() && !closeRequested) 
 	{
 		checkInput();
-		glClearColor(.5f, .5f, 0f, 1f);
+		glClearColor(1.0f, 1.0f, 1.0f, 1f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glUseProgram(shaderProgramInterval);
 		Util.checkGLError();
+		//glUniform1f(glGetUniformLocation(shaderProgramInterval, "scale"), 1.0f);
 		glUniform1i(glGetUniformLocation(shaderProgramInterval, "from"), -128);
 		glUniform1i(glGetUniformLocation(shaderProgramInterval, "to"), 127);
 		Util.checkGLError();
@@ -149,20 +151,21 @@ public class MainRender{
 		glBindTexture(GL_TEXTURE_1D, palettes[paletteId]);
 		
 		//========================================================================
-				
+			int scalingWidth = (int)(width * scale);
+			int scalingHeight = (int)(height * scale);
 			    
 		glBegin(GL_QUADS);
 			glTexCoord2d(0, 0);
 			glVertex2i(0, 0);
 		
 			glTexCoord2d(1, 0);
-			glVertex2i(width, 0);
+			glVertex2i(scalingWidth, 0);
 		
 			glTexCoord2d(1, 1);
-			glVertex2i(width, height);
+			glVertex2i(scalingWidth, scalingHeight);
 		
 			glTexCoord2d(0, 1);
-			glVertex2i(0, height);
+			glVertex2i(0, scalingHeight);
 		glEnd();
 		
 		
@@ -186,7 +189,6 @@ public class MainRender{
 
 	Display.destroy();
 	System.exit(0);
-	return null;
 	}
 	
 	public static void destroy()
@@ -303,6 +305,11 @@ public class MainRender{
 	public static void changePalette(String paletteName)
 	{
 		paletteId = getPaletteId(paletteName);
+	}
+	
+	public static void changeScale(float scale)
+	{
+		MainRender.scale += scale;
 	}
 	
 	
