@@ -29,8 +29,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import tools.ImageHelper;
 
@@ -38,12 +40,20 @@ public class TestFrame {
 
 	private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
 	private final static Font boldFont = new Font("SizeButton", Font.BOLD, 14);
+	private static Thread renderThread;
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("DICOM");
 		JPanel panel = new JPanel();
 		Choice palettes = new Choice();
+		
+		JFileChooser fileChooser = new JFileChooser();
+		FileNameExtensionFilter filter = new FileNameExtensionFilter(
+		        "DICOM", "dcm");
+		fileChooser.setFileFilter(filter);
 		Button openButton = new Button("Open File...");
+		
+
 		Button plusButton = new Button("+");
 		plusButton.setFont(boldFont);
 		plusButton.addActionListener(new ActionListener(){
@@ -129,11 +139,9 @@ public class TestFrame {
 		frame.add(openButton, button);
 		
 		GridBagConstraints image = new GridBagConstraints();
-		image.fill = GridBagConstraints.BOTH;
-		//image.weightx = 0.0;	
+		image.fill = GridBagConstraints.BOTH;	
 		image.gridx = 1;
 		image.gridy = 0;
-		//image.gridwidth = 1;
 		image.gridheight = 4;
 		 
 		panel.setPreferredSize(new Dimension(800, 600));
@@ -157,22 +165,41 @@ public class TestFrame {
 		button.gridy = 1;
 		frame.add(minusButton, button);
 		
+		openButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent ae) {
+				int returnVal = fileChooser.showOpenDialog(frame);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					String fileName = fileChooser.getSelectedFile().getAbsolutePath();
+					try {
+						ImageHelper.openImage(fileName);
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+					if(renderThread != null && renderThread.getState() != Thread.State.TERMINATED)
+					{
+						renderThread.interrupt();
+					}
+					int width = ImageHelper.getWidth();
+					int height = ImageHelper.getHeight();
+
+					Runnable rendering = new Runnable() {
+						public void run() {
+							MainRender.tmpFunc(ImageHelper.getDataBuffer(), width, height, canvas);
+						}
+					};
+					renderThread = new Thread(rendering);
+					renderThread.start();
+				}
+			}
+		});
+		
 
 		try {
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			frame.setPreferredSize(new Dimension(1024, 786));
 			frame.setMinimumSize(new Dimension(800, 600));
 			frame.pack();
-			frame.setVisible(true);
-			try {
-				ImageHelper.openImage("d://image.dcm");
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
-			int width = ImageHelper.getWidth();
-			int height = ImageHelper.getHeight();
-
-			MainRender.tmpFunc(ImageHelper.getDataBuffer(), width, height, canvas);
+			frame.setVisible(true);			
 
 		} catch (Exception e) {
 			e.printStackTrace();
