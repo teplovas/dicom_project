@@ -1,37 +1,29 @@
 package OpenGLFeatures;
 
-//import org.eclipse.swt.SWT;
-//import org.eclipse.swt.layout.GridData;
-//import org.eclipse.swt.layout.GridLayout;
-//import org.eclipse.swt.widgets.Composite;
-
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Canvas;
 import java.awt.Choice;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Hashtable;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import tools.ImageHelper;
@@ -39,8 +31,21 @@ import tools.ImageHelper;
 public class TestFrame {
 
 	private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
-	private final static Font boldFont = new Font("SizeButton", Font.BOLD, 14);
+	private final static Font boldFont = new Font("SizeButton", Font.BOLD, 16);
 	private static Thread renderThread;
+	private static JSlider range;
+	
+	private static void setRange(int from, int to)
+	{
+		range.setMinimum(from);
+		range.setMaximum(to);
+		Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
+		labelTable.put( from, new JLabel("From") );
+		labelTable.put( to, new JLabel("To") );
+		range.setLabelTable(labelTable);
+		range.setPaintLabels(true);
+		range.setValue((from + to) / 2);
+	}
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("DICOM");
@@ -49,10 +54,9 @@ public class TestFrame {
 		
 		JFileChooser fileChooser = new JFileChooser();
 		FileNameExtensionFilter filter = new FileNameExtensionFilter(
-		        "DICOM", "dcm");
+		        "Dicom files", "dcm");
 		fileChooser.setFileFilter(filter);
 		Button openButton = new Button("Open File...");
-		
 
 		Button plusButton = new Button("+");
 		plusButton.setFont(boldFont);
@@ -71,11 +75,17 @@ public class TestFrame {
 				  MainRender.changeScale(-0.1f);
 			  }
 			 });
+		
+		range = new JSlider(JSlider.HORIZONTAL);
+		setRange(0, 10);	
+		
 		palettes.add("Hot Iron Color Palette");
 		palettes.add("PET Color Palette");
 		palettes.add("Hot Metal Blue Color Palette");
 		palettes.add("PET 20 Step Color Palette");
 		palettes.add("Default Color Palette");
+		
+		palettes.select(4);
 
 		palettes.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent ie) {
@@ -98,7 +108,7 @@ public class TestFrame {
 					break;
 				}
 				case "Default Color Palette": {
-
+					MainRender.changePalette(null);
 					break;
 				}
 				}
@@ -142,10 +152,10 @@ public class TestFrame {
 		image.fill = GridBagConstraints.BOTH;	
 		image.gridx = 1;
 		image.gridy = 0;
-		image.gridheight = 4;
+		image.gridheight = 5;
 		 
 		panel.setPreferredSize(new Dimension(800, 600));
-		panel.setMinimumSize(new Dimension(150, 150));
+		panel.setMinimumSize(new Dimension(800, 600));
 		panel.setMaximumSize(new Dimension(800, 600));
 		panel.setLayout(new BorderLayout());
 		panel.add(canvas, BorderLayout.CENTER);
@@ -165,6 +175,11 @@ public class TestFrame {
 		button.gridy = 1;
 		frame.add(minusButton, button);
 		
+		paletteConstr.fill = GridBagConstraints.HORIZONTAL;
+		paletteConstr.gridx = 0;
+		paletteConstr.gridy = 4;
+		frame.add(range, paletteConstr);
+		
 		openButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ae) {
 				int returnVal = fileChooser.showOpenDialog(frame);
@@ -175,20 +190,30 @@ public class TestFrame {
 					} catch (Exception e1) {
 						e1.printStackTrace();
 					}
-					if(renderThread != null && renderThread.getState() != Thread.State.TERMINATED)
-					{
-						renderThread.interrupt();
-					}
+//					if(renderThread != null && renderThread.getState() != Thread.State.TERMINATED)
+//					{
+//						renderThread.interrupt();
+//					}
 					int width = ImageHelper.getWidth();
 					int height = ImageHelper.getHeight();
+					int from = ImageHelper.getMinValue();
+					int to = ImageHelper.getMaxValue();
 
-					Runnable rendering = new Runnable() {
-						public void run() {
-							MainRender.tmpFunc(ImageHelper.getDataBuffer(), width, height, canvas);
-						}
-					};
-					renderThread = new Thread(rendering);
-					renderThread.start();
+					MainRender.setImageBuffer(ImageHelper.getDataBuffer());
+					MainRender.setWidth(width);
+					MainRender.setHeight(height);
+					MainRender.setFrom(from);
+					MainRender.setTo(to);
+					
+					setRange(from, to);
+					//MainRender.renderImage(ImageHelper.getDataBuffer(), width, height);
+//					Runnable rendering = new Runnable() {
+//						public void run() {
+//							MainRender.tmpFunc(ImageHelper.getDataBuffer(), width, height, canvas);
+//						}
+//					};
+//					renderThread = new Thread(rendering);
+//					renderThread.start();
 				}
 			}
 		});
@@ -199,7 +224,19 @@ public class TestFrame {
 			frame.setPreferredSize(new Dimension(1024, 786));
 			frame.setMinimumSize(new Dimension(800, 600));
 			frame.pack();
-			frame.setVisible(true);			
+			frame.setVisible(true);
+			
+			Runnable rendering = new Runnable() {
+			public void run() {
+				MainRender.initDisplay(canvas);
+				MainRender.loadShadersAndPallettes();
+				//MainRender.loadPalettes();
+				MainRender.startRendering();
+			}
+		};
+		renderThread = new Thread(rendering);
+		renderThread.start();
+		//MainRender.renderImage(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight());
 
 		} catch (Exception e) {
 			e.printStackTrace();

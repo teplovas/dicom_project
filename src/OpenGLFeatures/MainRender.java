@@ -3,14 +3,9 @@ package OpenGLFeatures;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.ARBTextureRg;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.Util;
 import org.lwjgl.util.glu.GLU;
@@ -25,27 +20,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import javax.imageio.ImageIO;
-import javax.swing.JPanel;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 import org.newdawn.slick.opengl.Texture;
-import org.newdawn.slick.opengl.TextureImpl;
 import org.newdawn.slick.opengl.TextureLoader;
 
-import com.sun.javafx.geom.BaseBounds;
-import com.sun.javafx.geom.transform.BaseTransform;
-import com.sun.javafx.jmx.MXNodeAlgorithm;
-import com.sun.javafx.jmx.MXNodeAlgorithmContext;
-import com.sun.javafx.sg.prism.NGNode;
-
-import javafx.scene.Node;
-import javafx.scene.image.Image;
-import javafx.scene.layout.Region;
 import net.sourceforge.fastpng.PNGDecoder;
 import net.sourceforge.fastpng.PNGDecoder.TextureFormat;
 import tools.PaletteLoader;
@@ -55,20 +38,27 @@ import tools.PaletteLoader;
  * */
 public class MainRender{
 	
-	private static int min;
-	private static int max;
 	static int shaderProgramInterval;
-	private static String paletteName = "hotIron";
 	
 	private static int paletteId = 0;
-	private static Texture paletteTexture;
 	
 	private static int imageTextureId = 0;
-	private static int paletteTextureId = 0;
 	
 	private static int[] palettes = new int[4];
 	private static boolean closeRequested = false;
 	private static float scale = 1.0f;
+	private static boolean isImageLoad = false;
+	
+	private static int fragmentShaderInterval;
+	private static int vertexShaderInterval;
+	
+	private static Object[] imageBuffer;
+	private static int width;
+	private static int height;
+	private static int from;
+	private static int to;
+	private static boolean isUsePalette = false;
+	
 	
 	public MainRender(Object[] imageBuffer, int width, int height, Canvas canv)
 	{
@@ -97,6 +87,199 @@ public class MainRender{
 			e.printStackTrace();
 		}
 	}
+	
+	public static void initDisplay(Canvas canv) {
+		try {
+			Display.setParent(canv);
+			Display.setVSyncEnabled(true);
+			Display.create();
+		} catch (LWJGLException e) {
+			System.err.println("The display wasn't initialized correctly. :(");
+			Display.destroy();
+			System.exit(1);
+		}
+	}
+	
+	public static void loadShadersAndPallettes()
+	{
+		shaderProgramInterval = glCreateProgram();
+		
+		fragmentShaderInterval = createShader("shaderWindow.frag", true);
+		vertexShaderInterval = createShader("shaderWindow.vert", false);
+		
+		glAttachShader(shaderProgramInterval, vertexShaderInterval);
+		glAttachShader(shaderProgramInterval, fragmentShaderInterval);
+		
+		glLinkProgram(shaderProgramInterval);
+		glValidateProgram(shaderProgramInterval);
+		
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0, 800, 600, 0, 1, -1);
+		glMatrixMode(GL_MODELVIEW);
+		glEnable(GL_TEXTURE_2D);
+		glEnable(GL_TEXTURE_1D);
+		glUseProgram(shaderProgramInterval);
+		loadPalettes();
+	}
+	
+	private static void loadPalettes() {
+		IntBuffer texture_object_handles = BufferUtils.createIntBuffer(5);
+		glGenTextures(texture_object_handles);
+		imageTextureId = texture_object_handles.get(4);
+		for (int i = 0; i < 4; i++) {
+			try {
+				GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
+				ByteBuffer buf = null;
+				PNGDecoder decoder = null;
+				InputStream in = null;
+				int width, height;
+				try {
+					in = new FileInputStream("res/" + getPaletteTexture(i + 1) + ".PNG");
+					decoder = new PNGDecoder(in);
+
+					width = decoder.getWidth();
+					height = decoder.getHeight();
+
+					buf = BufferUtils.createByteBuffer(4 * width * height);
+					decoder.decode(buf, width * 4, PNGDecoder.TextureFormat.RGBA);
+					buf.flip();
+				} finally {
+					in.close();
+				}
+				palettes[i] = texture_object_handles.get(i);
+
+				glBindTexture(GL_TEXTURE_1D, palettes[i]);
+				Util.checkGLError();
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				Util.checkGLError();
+
+				// glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, decoder.getWidth(), 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+			} catch (Exception e) {
+			}
+		}
+	}
+	
+	private static void loadImage(Object[] imageBuffer, int width, int height)
+	{
+		if(imageBuffer == null)
+			return;
+		
+		Util.checkGLError();
+		glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture1"), 4);
+		Util.checkGLError();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+		Util.checkGLError();
+		glBindTexture(GL_TEXTURE_2D, imageTextureId);
+		Util.checkGLError();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		Util.checkGLError();
+		ByteBuffer buffer = BufferUtils.createByteBuffer(imageBuffer.length);
+		for(Object o : imageBuffer)
+		{
+			byte by = (byte)o;
+			buffer.put((by));
+		}
+		buffer.flip();
+		Util.checkGLError();
+		glTexImage2D(GL_TEXTURE_2D, 0, GL30.GL_R32I, width, height, 0, GL30.GL_RED_INTEGER, GL_BYTE, buffer);
+		isImageLoad = true;
+	}
+	
+	
+	public static void startRendering()
+	{
+		while (!Display.isCloseRequested() && !closeRequested) 
+		{
+			checkInput();
+			glClearColor(1.0f, 1.0f, 1.0f, 1f);
+			glClear(GL_COLOR_BUFFER_BIT);
+			glUseProgram(shaderProgramInterval);
+			loadImage(imageBuffer, width, height);
+			if(isImageLoad)
+			{
+			Util.checkGLError();
+			//glUniform1f(glGetUniformLocation(shaderProgramInterval, "scale"), 1.0f);
+			glUniform1i(glGetUniformLocation(shaderProgramInterval, "from"), from);
+			glUniform1i(glGetUniformLocation(shaderProgramInterval, "to"), to);
+			Util.checkGLError();
+			glUniform1i(glGetUniformLocation(shaderProgramInterval, "width"), width);
+			glUniform1i(glGetUniformLocation(shaderProgramInterval, "height"), height);
+			glUniform1i(glGetUniformLocation(shaderProgramInterval, "isUsePalette"), isUsePalette ? 1 : 0);
+			Util.checkGLError();
+			
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+			GL11.glBindTexture(GL_TEXTURE_2D, imageTextureId);
+			
+			glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture2"), palettes[paletteId] - 1);
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + paletteId);
+			glBindTexture(GL_TEXTURE_1D, palettes[paletteId]);
+			
+			int scalingWidth = (int)(width * scale);
+			int scalingHeight = (int)(height * scale);
+				    
+			glBegin(GL_QUADS);
+				glTexCoord2d(0, 0);
+				glVertex2i(0, 0);
+			
+				glTexCoord2d(1, 0);
+				glVertex2i(scalingWidth, 0);
+			
+				glTexCoord2d(1, 1);
+				glVertex2i(scalingWidth, scalingHeight);
+			
+				glTexCoord2d(0, 1);
+				glVertex2i(0, scalingHeight);
+			glEnd();
+						
+//			ByteBuffer bytes = BufferUtils.createByteBuffer(width * height * 4);
+//		    //GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
+//		    glGetTexImage(GL_TEXTURE_2D, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
+			//========================================================================
+			}
+		    glUseProgram(0);
+			Display.sync(60);
+			Display.update();
+			
+		}
+		GL11.glDeleteTextures(palettes[0]);
+		GL11.glDeleteTextures(palettes[1]);
+		GL11.glDeleteTextures(palettes[2]);
+		GL11.glDeleteTextures(palettes[3]);
+		glDeleteProgram(shaderProgramInterval);
+		glDeleteShader(vertexShaderInterval);
+		glDeleteShader(fragmentShaderInterval);
+
+		Display.destroy();
+		System.exit(0);
+	}
+	
+	public static void setImageBuffer(Object[] imageBuffer)
+	{
+		MainRender.imageBuffer = imageBuffer;
+	}
+	
+	public static void setWidth(int width)
+	{
+		MainRender.width = width;
+	}
+	
+	public static void setHeight(int height)
+	{
+		MainRender.height = height;
+	}
+	
+	public static void setFrom(int from)
+	{
+		MainRender.from = from;
+	}
+	
+	public static void setTo(int to)
+	{
+		MainRender.to = to;
+	}
+	
 	
 	public static void tmpFunc(Object[] imageBuffer, int width, int height, Canvas canv)
 	{		
@@ -304,7 +487,13 @@ public class MainRender{
 	
 	public static void changePalette(String paletteName)
 	{
+		if(paletteName == null)
+		{
+			isUsePalette = false;
+			return;
+		}
 		paletteId = getPaletteId(paletteName);
+		isUsePalette = true;
 	}
 	
 	public static void changeScale(float scale)
