@@ -520,13 +520,14 @@ public class MainRender{
 	
 	public static void changePalette(String paletteName)
 	{
-		if(paletteName == null)
-		{
-			isUsePalette = false;
-			return;
-		}
 		paletteId = getPaletteId(paletteName);
 		isUsePalette = true;
+	}
+	
+	public static void notUsePalette()
+	{
+		isUsePalette = false;
+		return;
 	}
 	
 	public static void changeScale(float scale)

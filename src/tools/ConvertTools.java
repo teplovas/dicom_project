@@ -145,7 +145,7 @@ public class ConvertTools {
 		return img;
 	}
 	
-	public static Object[] readDicomFile(String fileName) throws IOException
+	public static DicomImage readDicomFile(String fileName) throws IOException
 	{
 		DicomObject dcmObj;
 		DicomInputStream din = null;
@@ -211,27 +211,33 @@ public class ConvertTools {
 		finally{
 			din.close();
 		}
-		//System.out.println(minValue + " " + maxValue);
-		return data;
+		DicomImage dcmImg = new DicomImage();
+		dcmImg.setImageBuffer(data);
+		dcmImg.setFrom(minValue);
+		dcmImg.setTo(maxValue);
+		dcmImg.setHeight(rows);
+		dcmImg.setWidth(cols);
+		dcmImg.setColor(isColored);
+		return dcmImg;
 	}
 		
-	private static BufferedImage convertDcmToBufferedImage(String fileName, int from, int to) throws Exception
-	{
-		BufferedImage jpegImage2 = null;
-		Object[] data = readDicomFile(fileName);
-		
-			if(isColored)
-			{
-				jpegImage2 = convertDataToColorImage(data);
-			}
-				
-			else {
-				
-				jpegImage2 = convertDataToGreyImage(data, from, to);
-			}
-
-		return jpegImage2;
-	}
+//	private static BufferedImage convertDcmToBufferedImage(String fileName, int from, int to) throws Exception
+//	{
+//		BufferedImage jpegImage2 = null;
+//		Object[] data = readDicomFile(fileName);
+//		
+//			if(isColored)
+//			{
+//				jpegImage2 = convertDataToColorImage(data);
+//			}
+//				
+//			else {
+//				
+//				jpegImage2 = convertDataToGreyImage(data, from, to);
+//			}
+//
+//		return jpegImage2;
+//	}
 	
 	
 	
