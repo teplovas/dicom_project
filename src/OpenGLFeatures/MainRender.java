@@ -213,7 +213,6 @@ public class MainRender{
 			GL11.glTexImage2D(GL_TEXTURE_2D, 0, GL30.GL_R32I, width, height, 0, GL30.GL_RED_INTEGER, 
 					GL_SHORT, (ShortBuffer)buffer);
 		}
-		System.out.println("Image loaded!!");
 		isImageLoad = true;
 		isImageChanged = false;
 	}
@@ -224,7 +223,7 @@ public class MainRender{
 		while (!Display.isCloseRequested() && !closeRequested) 
 		{
 			checkInput();
-			glClearColor(1.0f, 1.0f, 1.0f, 1f);
+			glClearColor(0.92549f, 0.917647f, 0.917647f, 0.5f);
 			glClear(GL_COLOR_BUFFER_BIT);
 			glUseProgram(shaderProgramInterval);
 			loadImage(imageBuffer, width, height);
