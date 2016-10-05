@@ -36,6 +36,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
@@ -89,16 +90,17 @@ public class TestFrame extends JFrame {
 		});
 
 	    range = new RangeSlider();
+	    range.setOrientation(JSlider.VERTICAL);
 		range.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
-				MainRender.setFrom(range.getMaximum() - range.getUpperValue());
-				//System.out.println(range.getValue());
-				MainRender.setTo(range.getMaximum() - range.getValue());
-				//System.out.println(range.getUpperValue());
+				MainRender.setFrom(range.getValue());
+				System.out.println(range.getUpperValue());
+				MainRender.setTo(range.getUpperValue());
+				System.out.println(range.getValue());
 			}
 		});
 		range.setEnabled(false);
-		setRange(0, 10);
+		setRange(-128, 127);
 		
 		
 		palettes.add("Hot Iron Color Palette");
