@@ -78,10 +78,9 @@ public class TestFrame extends JFrame {
 	public void createFrame() {
 		JPanel panel = new JPanel();
 		
-		
 		JToolBar toolBar = new JToolBar();
 		toolBar.setRollover(true);
-		addButtons(toolBar);
+		addToolBarElements(toolBar);
 		
 		fileChooser = new JFileChooser();
 		fileChooser.setMultiSelectionEnabled(true);
@@ -119,7 +118,7 @@ public class TestFrame extends JFrame {
 
 		
 		GridBagConstraints toolB = new GridBagConstraints();
-		toolB.fill = GridBagConstraints.NONE;
+		toolB.fill = GridBagConstraints.HORIZONTAL;
 		toolB.weightx = 0.5;
 		toolB.gridx = 0;
 		toolB.gridy = 0;
@@ -131,7 +130,6 @@ public class TestFrame extends JFrame {
 		button.weightx = 0.5;
 		button.gridx = 0;
 		button.gridy = 0;
-//		this.add(openButton, button);
 
 		GridBagConstraints image = new GridBagConstraints();
 		image.fill = GridBagConstraints.BOTH;
@@ -147,22 +145,24 @@ public class TestFrame extends JFrame {
 		this.add(panel, image);
 
 		button.gridx = 2;
-		button.gridy = 0;
+		button.gridy = 1;
 		this.add(plusButton, button);
 
 		GridBagConstraints paletteConstr = new GridBagConstraints();
 		paletteConstr.fill = GridBagConstraints.NONE;
 		paletteConstr.gridx = 0;
 		paletteConstr.gridy = 2;
-		//this.add(palettes, paletteConstr);
+		JLabel label = new JLabel("djfdhfjhfhjdfhhd");
+		label.setVisible(false);
+		this.add(label, paletteConstr);
 
 		button.gridx = 2;
-		button.gridy = 1;
+		button.gridy = 2;
 		this.add(minusButton, button);
 
 		paletteConstr.fill = GridBagConstraints.VERTICAL;
 		paletteConstr.gridx = 2;
-		paletteConstr.gridy = 2;
+		paletteConstr.gridy = 3;
 		paletteConstr.gridheight = 3;
 		this.add(range, paletteConstr);
 
@@ -199,7 +199,7 @@ public class TestFrame extends JFrame {
 		}
 	}
 	
-	private void addButtons(JToolBar toolBar) {
+	private void addToolBarElements(JToolBar toolBar) {
 		
 		ImageIcon imageIcon = new ImageIcon("res/openIcon.png");
 		openAction = new OpenAction("Left", imageIcon, 
@@ -216,12 +216,12 @@ public class TestFrame extends JFrame {
         toolBar.add(paletteLabel);
         
         palettes = new Choice();
-        palettes.add("Hot Iron Color Palette");
-		palettes.add("PET Color Palette");
-		palettes.add("Hot Metal Blue Color Palette");
-		palettes.add("PET 20 Step Color Palette");
-		palettes.add("Default Color Palette");
-		palettes.select(4);
+        palettes.add("");
+        palettes.add("Hot Iron Color");
+		palettes.add("PET Color");
+		palettes.add("Hot Metal Blue Color");
+		palettes.add("PET 20 Step Color");
+		palettes.select(0);
 		palettes.setEnabled(false);
 		
 		toolBar.add(palettes);
@@ -249,23 +249,23 @@ public class TestFrame extends JFrame {
 			public void itemStateChanged(ItemEvent ie) {
 
 				switch (palettes.getSelectedItem()) {
-				case "Hot Iron Color Palette": {
+				case "Hot Iron Color": {
 					MainRender.changePalette("hotIron");
 					break;
 				}
-				case "PET Color Palette": {
+				case "PET Color": {
 					MainRender.changePalette("pet");
 					break;
 				}
-				case "Hot Metal Blue Color Palette": {
+				case "Hot Metal Blue Color": {
 					MainRender.changePalette("hotMetalBlue");
 					break;
 				}
-				case "PET 20 Step Color Palette": {
+				case "PET 20 Step Color": {
 					MainRender.changePalette("pet20");
 					break;
 				}
-				case "Default Color Palette": {
+				case "": {
 					MainRender.notUsePalette();
 					break;
 				}
@@ -273,43 +273,6 @@ public class TestFrame extends JFrame {
 
 			}
 		});
-		
-//		openButton.addMouseListener(new MouseAdapter() {
-//			@Override
-//			public void mouseClicked(MouseEvent e) {
-//				int returnVal = fileChooser.showOpenDialog(TestFrame.this);
-//				if (returnVal == JFileChooser.APPROVE_OPTION) {
-//					File[] files = fileChooser.getSelectedFiles();
-//					String fileName = null;
-//					dicomImages.clear();
-//					labels.clear();
-//					if (files.length > 1) {
-//						JPanel miniPanel = new JPanel();
-//						GridLayout gd = new GridLayout(files.length, 1);
-//						gd.setVgap(10);
-//						miniPanel.setLayout(gd);
-//
-//						for (File f : files) {
-//							fileName = f.getAbsolutePath();
-//							long start = System.currentTimeMillis();
-//							DicomImage image = readImageFromFile(fileName);
-//							//System.out.println("read: " + (System.currentTimeMillis() - start));
-//							start = System.currentTimeMillis();
-//							JLabel label = createMiniature(image, fileName);
-//							//System.out.println("mini: " + (System.currentTimeMillis() - start));
-//							labels.add(label);
-//							miniPanel.add(label);
-//						}
-//
-//						miniaturesPane.setViewportView(miniPanel);
-//					} else {
-//						fileName = files[0].getAbsolutePath();
-//						readImageFromFile(fileName);
-//					}
-//					showImage(fileName);
-//				}
-//			}
-//		});
 	}
 
 	private void setRange(int from, int to) {
@@ -407,16 +370,15 @@ public class TestFrame extends JFrame {
 	class OpenAction extends AbstractAction {
 		private static final long serialVersionUID = 3876578108001749755L;
 
-		public OpenAction(String text, Icon icon, String description,
-	        char accelerator) {
-	      super(text, icon);
-	      putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(accelerator,
-	          Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-	      putValue(SHORT_DESCRIPTION, description);
-	    }
+		public OpenAction(String text, Icon icon, String description, char accelerator) {
+			super(text, icon);
+			putValue(ACCELERATOR_KEY,
+					KeyStroke.getKeyStroke(accelerator, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+			putValue(SHORT_DESCRIPTION, description);
+		}
 
-	    public void actionPerformed(ActionEvent e) {
-	    	int returnVal = fileChooser.showOpenDialog(TestFrame.this);
+		public void actionPerformed(ActionEvent e) {
+			int returnVal = fileChooser.showOpenDialog(TestFrame.this);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
 				File[] files = fileChooser.getSelectedFiles();
 				String fileName = null;
@@ -432,10 +394,12 @@ public class TestFrame extends JFrame {
 						fileName = f.getAbsolutePath();
 						long start = System.currentTimeMillis();
 						DicomImage image = readImageFromFile(fileName);
-						//System.out.println("read: " + (System.currentTimeMillis() - start));
+						// System.out.println("read: " +
+						// (System.currentTimeMillis() - start));
 						start = System.currentTimeMillis();
 						JLabel label = createMiniature(image, fileName);
-						//System.out.println("mini: " + (System.currentTimeMillis() - start));
+						// System.out.println("mini: " +
+						// (System.currentTimeMillis() - start));
 						labels.add(label);
 						miniPanel.add(label);
 					}
@@ -448,24 +412,23 @@ public class TestFrame extends JFrame {
 				showImage(fileName);
 			}
 		}
-	    }
-	  
+	}
+
 	class InfoAction extends AbstractAction {
 		private static final long serialVersionUID = 3876578108001749755L;
 
-		public InfoAction(String text, Icon icon, String description,
-	        char accelerator) {
-	      super(text, icon);
-	      putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(accelerator,
-	          Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-	      putValue(SHORT_DESCRIPTION, description);
-	    }
-
-	    public void actionPerformed(ActionEvent e) {
-	    	DicomTagsDialog dlg = new DicomTagsDialog(TestFrame.this, dicomImages.get(currentFileName));
-			dlg.setSize(400, 400);
+		public InfoAction(String text, Icon icon, String description, char accelerator) {
+			super(text, icon);
+			putValue(ACCELERATOR_KEY,
+					KeyStroke.getKeyStroke(accelerator, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+			putValue(SHORT_DESCRIPTION, description);
 		}
-	    }
+
+		public void actionPerformed(ActionEvent e) {
+			DicomTagsDialog dlg = new DicomTagsDialog(TestFrame.this, dicomImages.get(currentFileName));
+			dlg.setSize(500, 500);
+		}
+	}
 
 	public static void main(String[] args) {
 		try {
