@@ -11,6 +11,7 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -29,7 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -37,12 +40,15 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import Application.DicomTagsDialog;
 import tools.DicomImage;
 import tools.ImageHelper;
 
@@ -58,6 +64,12 @@ public class TestFrame extends JFrame {
 	private Choice palettes;
 	private JScrollPane miniaturesPane;
 	private List<JLabel> labels = new ArrayList<JLabel>();
+	private String currentFileName;
+	private InfoAction infoAction;
+	Button plusButton;
+	Button minusButton;
+	JFileChooser fileChooser;
+	OpenAction openAction;
 
 	public TestFrame() {
 		super("DICOM");
@@ -65,52 +77,174 @@ public class TestFrame extends JFrame {
 
 	public void createFrame() {
 		JPanel panel = new JPanel();
-		palettes = new Choice();
-
-		JFileChooser fileChooser = new JFileChooser();
+		
+		
+		JToolBar toolBar = new JToolBar();
+		toolBar.setRollover(true);
+		addButtons(toolBar);
+		
+		fileChooser = new JFileChooser();
 		fileChooser.setMultiSelectionEnabled(true);
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("Dicom files", "dcm");
 		fileChooser.setFileFilter(filter);
-		Button openButton = new Button("Открыть файл...");
 
-		Button plusButton = new Button("+");
+		plusButton = new Button("+");
 		plusButton.setFont(boldFont);
+
+		minusButton = new Button("-");
+		minusButton.setFont(boldFont);
+
+	    range = new RangeSlider();
+	    range.setOrientation(JSlider.VERTICAL);
+		range.setEnabled(false);
+		setRange(-128, 127);
+
+		this.setLayout(new GridBagLayout());
+		final Canvas canvas = new Canvas();
+		canvas.setPreferredSize(new Dimension(800, 600));
+
+		canvas.addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentResized(ComponentEvent e) {
+				newCanvasSize.set(canvas.getSize());
+			}
+		});
+
+		this.addWindowFocusListener(new WindowAdapter() {
+			@Override
+			public void windowGainedFocus(WindowEvent e) {
+				canvas.requestFocusInWindow();
+			}
+		});
+
+		
+		GridBagConstraints toolB = new GridBagConstraints();
+		toolB.fill = GridBagConstraints.NONE;
+		toolB.weightx = 0.5;
+		toolB.gridx = 0;
+		toolB.gridy = 0;
+		toolB.gridwidth = 3;
+		this.add(toolBar, toolB);
+		
+		GridBagConstraints button = new GridBagConstraints();
+		button.fill = GridBagConstraints.NONE;
+		button.weightx = 0.5;
+		button.gridx = 0;
+		button.gridy = 0;
+//		this.add(openButton, button);
+
+		GridBagConstraints image = new GridBagConstraints();
+		image.fill = GridBagConstraints.BOTH;
+		image.gridx = 1;
+		image.gridy = 0;
+		image.gridheight = 5;
+
+		panel.setPreferredSize(new Dimension(800, 600));
+		panel.setMinimumSize(new Dimension(800, 600));
+		panel.setMaximumSize(new Dimension(800, 600));
+		panel.setLayout(new BorderLayout());
+		panel.add(canvas, BorderLayout.CENTER);
+		this.add(panel, image);
+
+		button.gridx = 2;
+		button.gridy = 0;
+		this.add(plusButton, button);
+
+		GridBagConstraints paletteConstr = new GridBagConstraints();
+		paletteConstr.fill = GridBagConstraints.NONE;
+		paletteConstr.gridx = 0;
+		paletteConstr.gridy = 2;
+		//this.add(palettes, paletteConstr);
+
+		button.gridx = 2;
+		button.gridy = 1;
+		this.add(minusButton, button);
+
+		paletteConstr.fill = GridBagConstraints.VERTICAL;
+		paletteConstr.gridx = 2;
+		paletteConstr.gridy = 2;
+		paletteConstr.gridheight = 3;
+		this.add(range, paletteConstr);
+
+		paletteConstr.fill = GridBagConstraints.BOTH;
+		paletteConstr.gridx = 0;
+		paletteConstr.gridy = 3;
+		paletteConstr.gridheight = 2;
+
+		miniaturesPane = new JScrollPane();
+		miniaturesPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		this.add(miniaturesPane, paletteConstr);
+
+		setListeners();
+
+		try {
+			this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			this.setPreferredSize(new Dimension(1024, 786));
+			this.setMinimumSize(new Dimension(800, 600));
+			this.pack();
+			this.setVisible(true);
+
+			Runnable rendering = new Runnable() {
+				public void run() {
+					MainRender.initDisplay(canvas);
+					MainRender.loadShadersAndPallettes();
+					MainRender.startRendering();
+				}
+			};
+			renderThread = new Thread(rendering);
+			renderThread.start();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void addButtons(JToolBar toolBar) {
+		
+		ImageIcon imageIcon = new ImageIcon("res/openIcon.png");
+		openAction = new OpenAction("Left", imageIcon, 
+				 "Открыть файл", 'L'); 
+        toolBar.add(openAction);
+        
+        imageIcon = new ImageIcon("res/infoIcon.png");
+        infoAction = new InfoAction("Left", imageIcon, 
+				 "Информация о файле", 'L'); 
+        toolBar.add(infoAction);
+        
+        toolBar.addSeparator();
+        JLabel paletteLabel = new JLabel("Палитра");
+        toolBar.add(paletteLabel);
+        
+        palettes = new Choice();
+        palettes.add("Hot Iron Color Palette");
+		palettes.add("PET Color Palette");
+		palettes.add("Hot Metal Blue Color Palette");
+		palettes.add("PET 20 Step Color Palette");
+		palettes.add("Default Color Palette");
+		palettes.select(4);
+		palettes.setEnabled(false);
+		
+		toolBar.add(palettes);
+    }
+	
+	private void setListeners()
+	{
 		plusButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ae) {
 				MainRender.changeScale(0.1f);
 			}
 		});
-
-		Button minusButton = new Button("-");
-		minusButton.setFont(boldFont);
 		minusButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ae) {
 				MainRender.changeScale(-0.1f);
 			}
 		});
-
-	    range = new RangeSlider();
-	    range.setOrientation(JSlider.VERTICAL);
 		range.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				MainRender.setFrom(range.getValue());
-				System.out.println(range.getUpperValue());
 				MainRender.setTo(range.getUpperValue());
-				System.out.println(range.getValue());
 			}
 		});
-		range.setEnabled(false);
-		setRange(-128, 127);
-		
-		
-		palettes.add("Hot Iron Color Palette");
-		palettes.add("PET Color Palette");
-		palettes.add("Hot Metal Blue Color Palette");
-		palettes.add("PET 20 Step Color Palette");
-		palettes.add("Default Color Palette");
-
-		palettes.select(4);
-
 		palettes.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent ie) {
 
@@ -139,131 +273,43 @@ public class TestFrame extends JFrame {
 
 			}
 		});
-		palettes.setEnabled(false);
-
-		this.setLayout(new GridBagLayout());
-		final Canvas canvas = new Canvas();
-		canvas.setPreferredSize(new Dimension(800, 600));
-
-		canvas.addComponentListener(new ComponentAdapter() {
-			@Override
-			public void componentResized(ComponentEvent e) {
-				newCanvasSize.set(canvas.getSize());
-			}
-		});
-
-		this.addWindowFocusListener(new WindowAdapter() {
-			@Override
-			public void windowGainedFocus(WindowEvent e) {
-				canvas.requestFocusInWindow();
-			}
-		});
-
-		GridBagConstraints button = new GridBagConstraints();
-		button.fill = GridBagConstraints.NONE;
-		button.weightx = 0.5;
-		button.gridx = 0;
-		button.gridy = 0;
-		this.add(openButton, button);
-
-		GridBagConstraints image = new GridBagConstraints();
-		image.fill = GridBagConstraints.BOTH;
-		image.gridx = 1;
-		image.gridy = 0;
-		image.gridheight = 5;
-
-		panel.setPreferredSize(new Dimension(800, 600));
-		panel.setMinimumSize(new Dimension(800, 600));
-		panel.setMaximumSize(new Dimension(800, 600));
-		panel.setLayout(new BorderLayout());
-		panel.add(canvas, BorderLayout.CENTER);
-		this.add(panel, image);
-
-		button.gridx = 2;
-		button.gridy = 0;
-		this.add(plusButton, button);
-
-		GridBagConstraints paletteConstr = new GridBagConstraints();
-		paletteConstr.fill = GridBagConstraints.NONE;
-		paletteConstr.gridx = 0;
-		paletteConstr.gridy = 2;
-		this.add(palettes, paletteConstr);
-
-		button.gridx = 2;
-		button.gridy = 1;
-		this.add(minusButton, button);
-
-		paletteConstr.fill = GridBagConstraints.VERTICAL;
-		paletteConstr.gridx = 2;
-		paletteConstr.gridy = 2;
-		paletteConstr.gridheight = 3;
-		this.add(range, paletteConstr);
-
-		paletteConstr.fill = GridBagConstraints.BOTH;
-		paletteConstr.gridx = 0;
-		paletteConstr.gridy = 3;
-		paletteConstr.gridheight = 2;
-
-		miniaturesPane = new JScrollPane();
-		miniaturesPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		this.add(miniaturesPane, paletteConstr);
-
-		openButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ae) {
-				int returnVal = fileChooser.showOpenDialog(TestFrame.this);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File[] files = fileChooser.getSelectedFiles();
-					String fileName = null;
-					dicomImages.clear();
-					labels.clear();
-					if (files.length > 1) {
-						JPanel miniPanel = new JPanel();
-						GridLayout gd = new GridLayout(files.length, 1);
-						gd.setVgap(10);
-						miniPanel.setLayout(gd);
-
-						for (File f : files) {
-							fileName = f.getAbsolutePath();
-							long start = System.currentTimeMillis();
-							DicomImage image = readImageFromFile(fileName);
-							System.out.println("read: " + (System.currentTimeMillis() - start));
-							start = System.currentTimeMillis();
-							JLabel label = createMiniature(image, fileName);
-							System.out.println("mini: " + (System.currentTimeMillis() - start));
-							labels.add(label);
-							miniPanel.add(label);
-						}
-
-						miniaturesPane.setViewportView(miniPanel);
-					} else {
-						fileName = files[0].getAbsolutePath();
-						readImageFromFile(fileName);
-					}
-					showImage(fileName);
-				}
-			}
-		});
-
-		try {
-			this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			this.setPreferredSize(new Dimension(1024, 786));
-			this.setMinimumSize(new Dimension(800, 600));
-			this.pack();
-			this.setVisible(true);
-
-			Runnable rendering = new Runnable() {
-				public void run() {
-					MainRender.initDisplay(canvas);
-					MainRender.loadShadersAndPallettes();
-					MainRender.startRendering();
-				}
-			};
-			renderThread = new Thread(rendering);
-			renderThread.start();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		
+//		openButton.addMouseListener(new MouseAdapter() {
+//			@Override
+//			public void mouseClicked(MouseEvent e) {
+//				int returnVal = fileChooser.showOpenDialog(TestFrame.this);
+//				if (returnVal == JFileChooser.APPROVE_OPTION) {
+//					File[] files = fileChooser.getSelectedFiles();
+//					String fileName = null;
+//					dicomImages.clear();
+//					labels.clear();
+//					if (files.length > 1) {
+//						JPanel miniPanel = new JPanel();
+//						GridLayout gd = new GridLayout(files.length, 1);
+//						gd.setVgap(10);
+//						miniPanel.setLayout(gd);
+//
+//						for (File f : files) {
+//							fileName = f.getAbsolutePath();
+//							long start = System.currentTimeMillis();
+//							DicomImage image = readImageFromFile(fileName);
+//							//System.out.println("read: " + (System.currentTimeMillis() - start));
+//							start = System.currentTimeMillis();
+//							JLabel label = createMiniature(image, fileName);
+//							//System.out.println("mini: " + (System.currentTimeMillis() - start));
+//							labels.add(label);
+//							miniPanel.add(label);
+//						}
+//
+//						miniaturesPane.setViewportView(miniPanel);
+//					} else {
+//						fileName = files[0].getAbsolutePath();
+//						readImageFromFile(fileName);
+//					}
+//					showImage(fileName);
+//				}
+//			}
+//		});
 	}
 
 	private void setRange(int from, int to) {
@@ -279,6 +325,7 @@ public class TestFrame extends JFrame {
 	 * @param fileName
 	 */
 	private void showImage(String fileName) {
+		this.currentFileName = fileName;
 		DicomImage dicomImage = dicomImages.get(fileName);
 
 		int width = dicomImage.getWidth();
@@ -356,6 +403,69 @@ public class TestFrame extends JFrame {
 			label.setBorder(null);
 		}
 	}
+	
+	class OpenAction extends AbstractAction {
+		private static final long serialVersionUID = 3876578108001749755L;
+
+		public OpenAction(String text, Icon icon, String description,
+	        char accelerator) {
+	      super(text, icon);
+	      putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(accelerator,
+	          Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+	      putValue(SHORT_DESCRIPTION, description);
+	    }
+
+	    public void actionPerformed(ActionEvent e) {
+	    	int returnVal = fileChooser.showOpenDialog(TestFrame.this);
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				File[] files = fileChooser.getSelectedFiles();
+				String fileName = null;
+				dicomImages.clear();
+				labels.clear();
+				if (files.length > 1) {
+					JPanel miniPanel = new JPanel();
+					GridLayout gd = new GridLayout(files.length, 1);
+					gd.setVgap(10);
+					miniPanel.setLayout(gd);
+
+					for (File f : files) {
+						fileName = f.getAbsolutePath();
+						long start = System.currentTimeMillis();
+						DicomImage image = readImageFromFile(fileName);
+						//System.out.println("read: " + (System.currentTimeMillis() - start));
+						start = System.currentTimeMillis();
+						JLabel label = createMiniature(image, fileName);
+						//System.out.println("mini: " + (System.currentTimeMillis() - start));
+						labels.add(label);
+						miniPanel.add(label);
+					}
+
+					miniaturesPane.setViewportView(miniPanel);
+				} else {
+					fileName = files[0].getAbsolutePath();
+					readImageFromFile(fileName);
+				}
+				showImage(fileName);
+			}
+		}
+	    }
+	  
+	class InfoAction extends AbstractAction {
+		private static final long serialVersionUID = 3876578108001749755L;
+
+		public InfoAction(String text, Icon icon, String description,
+	        char accelerator) {
+	      super(text, icon);
+	      putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(accelerator,
+	          Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+	      putValue(SHORT_DESCRIPTION, description);
+	    }
+
+	    public void actionPerformed(ActionEvent e) {
+	    	DicomTagsDialog dlg = new DicomTagsDialog(TestFrame.this, dicomImages.get(currentFileName));
+			dlg.setSize(400, 400);
+		}
+	    }
 
 	public static void main(String[] args) {
 		try {

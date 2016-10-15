@@ -4,12 +4,16 @@ import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
+import org.dcm4che2.util.TagUtils;
 
 
 public class ConvertTools {
@@ -147,9 +151,10 @@ public class ConvertTools {
 	
 	public static DicomImage readDicomFile(String fileName) throws IOException
 	{
-		DicomObject dcmObj;
+		DicomObject dcmObj = null;
 		DicomInputStream din = null;
 		Object[] data = null;
+		DicomImage dcmImg = new DicomImage();
 		try{
 			din = new DicomInputStream(new File(fileName));
 			dcmObj = din.readDicomObject();
@@ -203,7 +208,13 @@ public class ConvertTools {
 				}
 				size++;
 			}
-			
+			dcmImg.setImageBuffer(data);
+			dcmImg.setFrom(minValue);
+			dcmImg.setTo(maxValue);
+			dcmImg.setHeight(rows);
+			dcmImg.setWidth(cols);
+			dcmImg.setColor(isColored);
+			dcmImg.setTagsValues(listHeader(dcmObj));
 		}catch(Exception e)
 		{
 			
@@ -211,15 +222,34 @@ public class ConvertTools {
 		finally{
 			din.close();
 		}
-		DicomImage dcmImg = new DicomImage();
-		dcmImg.setImageBuffer(data);
-		dcmImg.setFrom(minValue);
-		dcmImg.setTo(maxValue);
-		dcmImg.setHeight(rows);
-		dcmImg.setWidth(cols);
-		dcmImg.setColor(isColored);
 		return dcmImg;
 	}
+	
+	public static List<String> listHeader(DicomObject object) {
+		   List<String> headers = new ArrayList<String>();
+		   Iterator<DicomElement> iter = object.datasetIterator();
+		   while(iter.hasNext()) {
+		      DicomElement element = iter.next();
+		      int tag = element.tag();
+		      try {
+		         String tagName = object.nameOf(tag);
+		         String tagAddr = TagUtils.toString(tag);
+		         String tagVR = object.vrOf(tag).toString();
+		         if (tagVR.equals("SQ")) {
+		            if (element.hasItems()) {
+		               headers.add(tagAddr +" ["+  tagVR +"] "+ tagName);
+		               listHeader(element.getDicomObject());
+		               continue;
+		            }
+		         }    
+		         String tagValue = object.getString(tag);    
+		         headers.add(tagAddr +" ["+ tagVR +"] "+ tagName +" ["+ tagValue+"]");
+		      } catch (Exception e) {
+		         e.printStackTrace();
+		      }
+		   }  
+		   return headers;
+		}
 		
 //	private static BufferedImage convertDcmToBufferedImage(String fileName, int from, int to) throws Exception
 //	{

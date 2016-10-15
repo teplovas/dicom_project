@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src">
 		<attributes>
-			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Users/user/Downloads/lwjgl-2.9.3/native/windows"/>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="Recent/native"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/user/Downloads/dcm4che-3.3.7-bin/dcm4che-3.3.7/lib/clibwrapper_jiio-1.2-pre-dr-b04.jar"/>

@@ -3,6 +3,7 @@ package OpenGLFeatures;
 import org.eclipse.swt.internal.ole.win32.ISpecifyPropertyPages;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.LWJGLUtil;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
@@ -93,6 +94,9 @@ public class MainRender{
 	}
 	
 	public static void initDisplay(Canvas canv) {
+		File JGLLib = new File("native/");
+
+		System.setProperty("org.lwjgl.librarypath", JGLLib.getAbsolutePath());
 		try {
 			Display.setParent(canv);
 			Display.setVSyncEnabled(true);
@@ -836,7 +840,7 @@ public class MainRender{
 	private static int createShader(String shaderName, boolean isFragment)
 	{
 		int shader = glCreateShader(isFragment ? GL_FRAGMENT_SHADER : GL_VERTEX_SHADER);
-		glShaderSource(shader, createShaderSource("src/OpenGLFeatures/" + shaderName));
+		glShaderSource(shader, createShaderSource("shaders/" + shaderName));
 		glCompileShader(shader);
 		if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
 			System.err.println("Shader " + shaderName + " wasn't able to be compiled correctly.");

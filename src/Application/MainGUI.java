@@ -86,8 +86,8 @@ public class MainGUI extends Application {
 				File file = new File("d://image.dcm");//fileChooser.showOpenDialog(stage);
 				if (file != null) {
 					openFile(file);
-					from = ImageHelper.getMinValue();
-					to = ImageHelper.getMaxValue();
+//					from = ImageHelper.getMinValue();
+//					to = ImageHelper.getMaxValue();
 					//MainRender.tmpFunc(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight());
 					darknessSlider.setMax(to);
 					darknessSlider.setMin(from);
@@ -218,7 +218,7 @@ public class MainGUI extends Application {
 			scrollPane.setFitToHeight(true);
 			scrollPane.setFitToWidth(true);
 			scrollPane.setManaged(true);
-			MainRender.tmpFunc(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight(), canvas);
+			//MainRender.tmpFunc(ImageHelper.getDataBuffer(), ImageHelper.getWidth(), ImageHelper.getHeight(), canvas);
 			GridPane.setHalignment(scrollPane, HPos.CENTER);
 			GridPane.setValignment(scrollPane, VPos.TOP);
 			inputGridPane.add(scrollPane, 1, 1, 1, 2); //.getChildren().add(mainImage);
@@ -229,20 +229,20 @@ public class MainGUI extends Application {
 
 	private void changeColorOfImage(int paletteType)
 	{
-		try {
-			Image img = ImageHelper.changeOpendGreyImage(from, to, paletteType);
-			mainImage.setFill(new ImagePattern(img));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			//Image img = ImageHelper.changeOpendGreyImage(from, to, paletteType);
+//			mainImage.setFill(new ImagePattern(img));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 	}
 	
 	private Image getImage(String fileName) {
-		try {
-			return ImageHelper.openImage(fileName);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			return ImageHelper.openImage(fileName);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 		return null;
 	}
 	

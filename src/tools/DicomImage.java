@@ -1,5 +1,7 @@
 package tools;
 
+import java.util.List;
+
 public class DicomImage {
 	
 	private Integer width;
@@ -8,6 +10,7 @@ public class DicomImage {
 	private Integer to;
 	private Object[] imageBuffer;
 	private boolean isColor;
+	private List<String> tagsValues;
 	
 	
 	public Integer getWidth() {
@@ -46,5 +49,10 @@ public class DicomImage {
 	public void setColor(boolean isColor) {
 		this.isColor = isColor;
 	}
-
+	public List<String> getTagsValues() {
+		return tagsValues;
+	}
+	public void setTagsValues(List<String> tagsValues) {
+		this.tagsValues = tagsValues;
+	}
 }
