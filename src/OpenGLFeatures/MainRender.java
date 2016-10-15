@@ -1,9 +1,7 @@
 package OpenGLFeatures;
 
-import org.eclipse.swt.internal.ole.win32.ISpecifyPropertyPages;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.LWJGLUtil;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
@@ -34,7 +32,6 @@ import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
 
 import net.sourceforge.fastpng.PNGDecoder;
-import net.sourceforge.fastpng.PNGDecoder.TextureFormat;
 import tools.PaletteLoader;
 
 /** 
@@ -173,6 +170,13 @@ public class MainRender{
 	{
 		if(imageBuffer == null || !isImageChanged)
 			return;
+		
+//		glMatrixMode(GL_PROJECTION);
+//		glLoadIdentity();
+//		glOrtho(0, width, height, 0, 1, -1);
+//		glMatrixMode(GL_MODELVIEW);
+//		glEnable(GL_TEXTURE_2D);
+//		glEnable(GL_TEXTURE_1D);
 		
 		Util.checkGLError();
 		glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture1"), 4);
@@ -341,7 +345,7 @@ public class MainRender{
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, 640, 480, 0, 1, -1);
+	glOrtho(0, width, height, 0, 1, -1);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_1D);
@@ -550,287 +554,7 @@ public class MainRender{
             System.exit(-1);
         }
     }
-	//
-//	private static Texture texture;
-//
-//	private static int width = 0;
-//	private static int height = 0;
-//	
-//	private static float from;
-//	private static float to;
-//	static int texId;
-//
-//	private static enum State {
-//		NORMAL, HOT_IRON, HOT_METAL_BLUE, PET, PET20;
-//	}
-//
-//	private static State state = State.NORMAL;
-//	
-//	/**
-//	 * Шейдер для применения палитр
-//	 */
-//	private static int shaderProgramPalette;
-//	/**
-//	 * Шейдер для инвертирования цвета
-//	 */
-//	private static int shaderProgramInverse;
-//	/**
-//	 * Шейдер для применения границ окна
-//	 */
-//	private static int shaderProgramInterval;
-//
-//	
-//	public static void createDisplay(Object[] imageBuffer, int height, int width)
-//	{
-//		try {
-//			Display.setDisplayMode(new DisplayMode(width, height));
-//			Display.setTitle("DICOM");
-//			Display.create();
-//			texture = createTexture(imageBuffer, width, height);
-//			//texture = loadTexture("pic");
-//		} catch (LWJGLException e) {
-//			System.err.println("The display wasn't initialized correctly. :(");
-//			Display.destroy();
-//			System.exit(1);
-//		}
-//	}
-//	
-/////*	public static Texture createTexture(Object[] imageBuffer, int width, int height)
-////	{
-////		InputStream in = null;
-////		ByteBuffer buf = null;
-////		try {
-////		in = new FileInputStream("res/pic.png");
-////		   PNGDecoder decoder = new PNGDecoder(in);
-////		 
-////		   width = decoder.getWidth();
-////		   height = decoder.getHeight();
-////		   System.out.println("width="+decoder.getWidth());
-////		   System.out.println("height="+decoder.getHeight());
-////		 
-////		   buf = ByteBuffer.allocateDirect(3*decoder.getWidth()*decoder.getHeight());
-////		   decoder.decode(buf, decoder.getWidth()*3, TextureFormat.RGB);
-////		   buf.flip();
-////		}
-////		catch(Exception e)
-////		{
-////			
-////		}
-////		finally {
-////		   try {
-////			in.close();
-////		} catch (IOException e) {
-////			// TODO Auto-generated catch block
-////			e.printStackTrace();
-////		}
-////		}
-////		
-////		/*ByteBuffer buffer = BufferUtils.createByteBuffer(imageBuffer.length);
-////		int k = 0;
-////		for(Object b : imageBuffer)
-////		{
-////				//int rgb = ((byte)imageBuffer[k]&0x0ff)<<16|((byte)imageBuffer[k++]&0x0ff)<<8|((byte)imageBuffer[k++]&0x0ff);
-////				//buffer.put((byte)((byte)b & 0x0ff));
-////				buffer.put((byte)0.1);
-////		}
-////		buffer.flip();*/
-////		/*Util.checkGLError();
-////		texId = GL11.glGenTextures();
-////		TextureImpl texture = new TextureImpl("", GL_TEXTURE_2D, texId);
-////		 GL11.glEnable(GL_TEXTURE_2D);
-////
-////		 GL11.glBindTexture(GL_TEXTURE_2D, texId);
-////		 Util.checkGLError();
-////		 texture.setTextureHeight(height);
-////		 texture.setTextureWidth(width);
-////		 texture.setAlpha(false);
-////		 Util.checkGLError();
-////		 GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-////	     GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-////	     Util.checkGLError();*/
-//////		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-//////		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
-//////		glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-//////		glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 0);
-////		
-//////		GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
-//////        GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
-//// /*       Util.checkGLError();
-////        glBindTexture(GL_TEXTURE_2D, texId);
-////        Util.checkGLError();
-////              glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-////              Util.checkGLError();
-////              glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-////              Util.checkGLError();
-////              glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-////              Util.checkGLError();
-////              glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 0);
-////              Util.checkGLError();
-////                  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buf);
-////        /*GL11.glTexImage2D(GL_TEXTURE_2D,
-////                0,
-////                GL_RGB8,
-////                texture.getTextureWidth(),
-////                texture.getTextureHeight(),
-////                0,
-////                GL_RGB8,
-////                GL_BYTE,
-////                buf);*/
-////  /*      Util.checkGLError();
-////        return texture;
-////		 
-////		// All RGB bytes are aligned to each other and each component is 1 byte
-////		//GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
-////		
-////		//GL11.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB8, GL_BYTE, buffer);/*GL11.GL_TEXTURE_2D, 0, ARBTextureRg.GL_RG8, width, height, 0, 
-////		//		GL11.GL_RED, GL11.GL_BYTE, buffer);*/
-////		//GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-////	}
-//
-//	
-//	public static void destroyRender()
-//	{
-//		
-//	}
-//	
-////	public static void loadAndPrepareShaders(int from, int to, int paletteNumber)
-////	{
-////		shaderProgramPalette = glCreateProgram();
-////		shaderProgramInverse = glCreateProgram();
-////		shaderProgramInterval = glCreateProgram();
-////		
-////		int fragmentShaderPalette = createShader("shaderPalette.frag", true);
-////		int vertexShaderPalette = createShader("shaderPalette.vert", false);
-////		
-////		int fragmentShaderInvert = createShader("shaderInvert.frag", true);
-////		int vertexShaderInvert = createShader("shaderInvert.vert", false);
-////		
-////		int fragmentShaderInterval = createShader("shaderWindow.frag", true);
-////		int vertexShaderInterval = createShader("shaderWindow.vert", false);
-////		
-////		glAttachShader(shaderProgramPalette, vertexShaderPalette);
-////		glAttachShader(shaderProgramPalette, fragmentShaderPalette);
-////		
-////		glAttachShader(shaderProgramInverse, vertexShaderInvert);
-////		glAttachShader(shaderProgramInverse, fragmentShaderInvert);
-////		
-////		glAttachShader(shaderProgramInterval, vertexShaderInterval);
-////		glAttachShader(shaderProgramInterval, fragmentShaderInterval);
-////		
-////		glLinkProgram(shaderProgramPalette);
-////		glValidateProgram(shaderProgramPalette);
-////		
-////		glLinkProgram(shaderProgramInverse);
-////		glValidateProgram(shaderProgramInverse);
-////		
-////		glLinkProgram(shaderProgramInterval);
-////		glValidateProgram(shaderProgramInterval);
-////				
-////		glMatrixMode(GL_PROJECTION);
-////		glLoadIdentity();
-////		glOrtho(0, 640, 480, 0, 1, -1);
-////		glMatrixMode(GL_MODELVIEW);
-////		glEnable(GL_TEXTURE_2D);
-////		//glEnable(GL_TEXTURE_1D);
-////
-////		while (!Display.isCloseRequested()) {
-////			checkInput();
-////			glClear(GL_COLOR_BUFFER_BIT);
-////			Util.checkGLError();
-////			//texture.bind();
-////			glBindTexture(GL_TEXTURE_2D, texId);
-////			Util.checkGLError();
-////			render(from, to, paletteNumber);
-////			Util.checkGLError();
-////			
-//////+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++		    
-//////		    int tex = glGenTextures();
-//////		    glBindTexture(GL_TEXTURE_1D, tex);
-//////		       
-//////		    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//////		    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//////		 
-//////		    GL11.glTexImage1D(GL_TEXTURE_1D, 0, ARBTextureRg.GL_R16F, 0, 768, GL11.GL_RED, GL11.GL_FLOAT, getPalette(1));
-//////		    int paletteTexture = glGetUniformLocation(shaderProgramPalette, "texture2");
-//////		    glUniform1i(paletteTexture, tex);
-//////+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-////			glBegin(GL_QUADS);
-////				glTexCoord2d(0, 0);
-////				glVertex2i(0, 0);
-////	
-////				glTexCoord2d(1, 0);
-////				glVertex2i(width, 0);
-////	
-////				glTexCoord2d(1, 1);
-////				glVertex2i(width, height);
-////	
-////				glTexCoord2d(0, 1);
-////				glVertex2i(0, height);
-////			glEnd();
-////
-////			glUseProgram(0);
-////			Display.update();
-////			Display.sync(60);
-////		}
-////		glDeleteProgram(shaderProgramPalette);
-////		glDeleteShader(vertexShaderPalette);
-////		glDeleteShader(fragmentShaderPalette);
-////		
-////		glDeleteProgram(shaderProgramInverse);
-////		glDeleteShader(vertexShaderInvert);
-////		glDeleteShader(fragmentShaderInvert);
-////		
-////		glDeleteProgram(shaderProgramInterval);
-////		glDeleteShader(vertexShaderInterval);
-////		glDeleteShader(fragmentShaderInterval);
-////		
-////		Display.destroy();
-////		System.exit(0);
-////	}
-//	
-//	public static void main(String[] args) {
-//		
-//		texture = loadTexture("pic");
-//
-//		shaderProgramPalette = glCreateProgram();
-//		shaderProgramInverse = glCreateProgram();
-//		shaderProgramInterval = glCreateProgram();
-//		
-//		int fragmentShaderPalette = createShader("shaderPalette.frag", true);
-//		int vertexShaderPalette = createShader("shaderPalette.vert", false);
-//		
-//		int fragmentShaderInvert = createShader("shaderInvert.frag", true);
-//		int vertexShaderInvert = createShader("shaderInvert.vert", false);
-//		
-//		int fragmentShaderInterval = createShader("shaderWindow.frag", true);
-//		int vertexShaderInterval = createShader("shaderWindow.vert", false);
-//		
-//		glAttachShader(shaderProgramPalette, vertexShaderPalette);
-//		glAttachShader(shaderProgramPalette, fragmentShaderPalette);
-//		
-//		glAttachShader(shaderProgramInverse, vertexShaderInvert);
-//		glAttachShader(shaderProgramInverse, fragmentShaderInvert);
-//		
-//		glAttachShader(shaderProgramInterval, vertexShaderInterval);
-//		glAttachShader(shaderProgramInterval, fragmentShaderInterval);
-//		
-//		glLinkProgram(shaderProgramPalette);
-//		glValidateProgram(shaderProgramPalette);
-//		
-//		glLinkProgram(shaderProgramInverse);
-//		glValidateProgram(shaderProgramInverse);
-//		
-//		glLinkProgram(shaderProgramInterval);
-//		glValidateProgram(shaderProgramInterval);
-//				
-//		glMatrixMode(GL_PROJECTION);
-//		glLoadIdentity();
-//		glOrtho(0, 640, 480, 0, 1, -1);
-//		glMatrixMode(GL_MODELVIEW);
-//		glEnable(GL_TEXTURE_2D);
-//		glEnable(GL_TEXTURE_1D);
-//
-//	
+
 	/**
 	 * Создание шейдера
 	 * @param shaderName - название
@@ -880,68 +604,7 @@ public class MainRender{
 		}
 		return shaderSource;
 	}
-//	
-//	public static FloatBuffer getPalette(int palette)
-//	{
-//		int [][] array = PaletteLoader.getPalette(palette);
-//		float[] buffer = new float[1024];
-//		int k = 0;
-//		for(int i = 0; i < array.length; i++)
-//		{
-//			for(int j = 0; j < 3; j++)
-//			{
-//				buffer[k] = (float)array[i][j];
-//				k++;
-//			}
-//		}
-//		// до степени 2
-////		for(int i = 0; i < 1024 - array.length * 3; i++)
-////		{
-////			buffer[k] = 0;
-////			k++;
-////		}
-//		FloatBuffer paletteBuffer = BufferUtils.createFloatBuffer(buffer.length);
-//		for(float f: buffer)
-//		{
-//			paletteBuffer.put(f);
-//		}
-//		paletteBuffer.rewind();
-//		return paletteBuffer;
-//	}
-//
-//	private static void render(int from, int to, int paletteNumber) {
-//		switch (state) {
-//		case NORMAL:
-//			glUseProgram(shaderProgramInterval);
-//		    int locFrom = glGetUniformLocation(shaderProgramInterval, "from");
-//		    int locTo = glGetUniformLocation(shaderProgramInterval, "to");
-//		    glUniform1f(locFrom, (float)from);
-//		    glUniform1f(locTo, (float)to);
-//			break;
-//		case HOT_IRON:
-//			glUseProgram(shaderProgramPalette);
-//			int loc = glGetUniformLocation(shaderProgramPalette, "palette");
-//		    glUniform1(loc, getPalette(1));
-//		    break;
-//		case HOT_METAL_BLUE:	
-//			glUseProgram(shaderProgramInterval);
-//		    //int locFrom = glGetUniformLocation(shaderProgramInterval, "from");
-//		    //int locTo = glGetUniformLocation(shaderProgramInterval, "to");
-//		    //glUniform1f(locFrom, (float)from);
-//		    //glUniform1f(locTo, (float)to);
-//			break;
-//		case PET:		    
-//		    loc = glGetUniformLocation(shaderProgramPalette, "palette");
-//		    glUniform1(loc, getPalette(3));
-//			break;
-//		case PET20:		    
-//		    loc = glGetUniformLocation(shaderProgramPalette, "palette");
-//		    glUniform1(loc, getPalette(4));
-//			break;
-//		}
-//		
-//	}
-//
+
 	private static void checkInput() {
 		switch (paletteId) {
 		case 0:
@@ -988,7 +651,7 @@ public class MainRender{
 			}
 		}
 	}
-////
+
 	private static Texture loadTexture(String fileName) {
 		try {
 			Texture tex = TextureLoader.getTexture("PNG", new FileInputStream(new File("res/" + fileName + ".png")));

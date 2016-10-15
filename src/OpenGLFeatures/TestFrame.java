@@ -100,7 +100,7 @@ public class TestFrame extends JFrame {
 
 		this.setLayout(new GridBagLayout());
 		final Canvas canvas = new Canvas();
-		canvas.setPreferredSize(new Dimension(800, 600));
+		canvas.setPreferredSize(new Dimension(1000, 800));
 
 		canvas.addComponentListener(new ComponentAdapter() {
 			@Override
@@ -137,9 +137,9 @@ public class TestFrame extends JFrame {
 		image.gridy = 0;
 		image.gridheight = 5;
 
-		panel.setPreferredSize(new Dimension(800, 600));
-		panel.setMinimumSize(new Dimension(800, 600));
-		panel.setMaximumSize(new Dimension(800, 600));
+		//panel.setPreferredSize(new Dimension(800, 600));
+		panel.setMinimumSize(new Dimension(1000, 600));
+		//panel.setMaximumSize(new Dimension(800, 600));
 		panel.setLayout(new BorderLayout());
 		panel.add(canvas, BorderLayout.CENTER);
 		this.add(panel, image);
@@ -149,11 +149,13 @@ public class TestFrame extends JFrame {
 		this.add(plusButton, button);
 
 		GridBagConstraints paletteConstr = new GridBagConstraints();
-		paletteConstr.fill = GridBagConstraints.NONE;
+		paletteConstr.fill = GridBagConstraints.HORIZONTAL;
 		paletteConstr.gridx = 0;
-		paletteConstr.gridy = 2;
-		JLabel label = new JLabel("djfdhfjhfhjdfhhd");
-		label.setVisible(false);
+		paletteConstr.gridy = 1;
+		JLabel label = new JLabel("                                            ");
+		label.setSize(200, label.getHeight());
+		label.setPreferredSize(new Dimension(200, 0));
+		//label.setVisible(false);
 		this.add(label, paletteConstr);
 
 		button.gridx = 2;
@@ -168,21 +170,22 @@ public class TestFrame extends JFrame {
 
 		paletteConstr.fill = GridBagConstraints.BOTH;
 		paletteConstr.gridx = 0;
-		paletteConstr.gridy = 3;
-		paletteConstr.gridheight = 2;
+		paletteConstr.gridy = 2;
+		paletteConstr.gridheight = 3;
 
 		miniaturesPane = new JScrollPane();
 		miniaturesPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		miniaturesPane.setPreferredSize(new Dimension(200, 0));
 		this.add(miniaturesPane, paletteConstr);
 
 		setListeners();
 
 		try {
 			this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			this.setPreferredSize(new Dimension(1024, 786));
 			this.setMinimumSize(new Dimension(800, 600));
-			this.pack();
+			this.setExtendedState(JFrame.MAXIMIZED_BOTH); 
 			this.setVisible(true);
+			//this.pack();
 
 			Runnable rendering = new Runnable() {
 				public void run() {
@@ -202,13 +205,11 @@ public class TestFrame extends JFrame {
 	private void addToolBarElements(JToolBar toolBar) {
 		
 		ImageIcon imageIcon = new ImageIcon("res/openIcon.png");
-		openAction = new OpenAction("Left", imageIcon, 
-				 "Открыть файл", 'L'); 
+		openAction = new OpenAction(imageIcon, "Открыть файл"); 
         toolBar.add(openAction);
         
         imageIcon = new ImageIcon("res/infoIcon.png");
-        infoAction = new InfoAction("Left", imageIcon, 
-				 "Информация о файле", 'L'); 
+        infoAction = new InfoAction(imageIcon, "Информация о файле"); 
         toolBar.add(infoAction);
         
         toolBar.addSeparator();
@@ -306,7 +307,7 @@ public class TestFrame extends JFrame {
 
 		palettes.setEnabled(!dicomImage.isColor());
 		if (dicomImage.isColor()) {
-			palettes.select(4);
+			palettes.select(0);
 			MainRender.notUsePalette();
 		}
 		range.setEnabled(true);
@@ -367,14 +368,11 @@ public class TestFrame extends JFrame {
 		}
 	}
 	
-	class OpenAction extends AbstractAction {
+	class OpenAction extends ToolBarAction {
 		private static final long serialVersionUID = 3876578108001749755L;
 
-		public OpenAction(String text, Icon icon, String description, char accelerator) {
-			super(text, icon);
-			putValue(ACCELERATOR_KEY,
-					KeyStroke.getKeyStroke(accelerator, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-			putValue(SHORT_DESCRIPTION, description);
+		public OpenAction(Icon icon, String description) {
+			super(icon, description);
 		}
 
 		public void actionPerformed(ActionEvent e) {
@@ -414,20 +412,30 @@ public class TestFrame extends JFrame {
 		}
 	}
 
-	class InfoAction extends AbstractAction {
-		private static final long serialVersionUID = 3876578108001749755L;
+	class InfoAction extends ToolBarAction {
+		private static final long serialVersionUID = 6140859768252974830L;
 
-		public InfoAction(String text, Icon icon, String description, char accelerator) {
-			super(text, icon);
-			putValue(ACCELERATOR_KEY,
-					KeyStroke.getKeyStroke(accelerator, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-			putValue(SHORT_DESCRIPTION, description);
+		public InfoAction(Icon icon, String description) {
+			super(icon, description);
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			DicomTagsDialog dlg = new DicomTagsDialog(TestFrame.this, dicomImages.get(currentFileName));
-			dlg.setSize(500, 500);
+			if(currentFileName != null)
+			{
+				DicomTagsDialog dlg = new DicomTagsDialog(TestFrame.this, dicomImages.get(currentFileName));
+				dlg.setSize(500, 500);
+			}
 		}
+	}
+	
+	abstract class ToolBarAction extends AbstractAction {
+		public ToolBarAction(Icon icon, String description) {
+			super("", icon);
+			putValue(ACCELERATOR_KEY,
+					KeyStroke.getKeyStroke('c', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+			putValue(SHORT_DESCRIPTION, description);
+		}
+		abstract public void actionPerformed(ActionEvent e);
 	}
 
 	public static void main(String[] args) {
