@@ -61,6 +61,9 @@ public class MainRender{
 	private static boolean isUsePalette = false;
 	private static boolean isImageChanged = false;
 	
+	private static float moveX = 0.0f;
+	private static float moveY = 0.0f;
+	
 	
 	public MainRender(Object[] imageBuffer, int width, int height, Canvas canv)
 	{
@@ -226,57 +229,62 @@ public class MainRender{
 	}
 	
 	
-	public static void startRendering()
-	{
-		while (!Display.isCloseRequested() && !closeRequested) 
-		{
+	public static void startRendering() {
+		while (!Display.isCloseRequested() && !closeRequested) {
 			checkInput();
 			glClearColor(0.92549f, 0.917647f, 0.917647f, 0.5f);
 			glClear(GL_COLOR_BUFFER_BIT);
+
+			glTranslatef(moveX, moveY, 0);
+
 			glUseProgram(shaderProgramInterval);
 			loadImage(imageBuffer, width, height);
-			if(isImageLoad)
-			{
-			Util.checkGLError();
-			//glUniform1f(glGetUniformLocation(shaderProgramInterval, "scale"), 1.0f);
-			glUniform1i(glGetUniformLocation(shaderProgramInterval, "from"), from);
-			glUniform1i(glGetUniformLocation(shaderProgramInterval, "to"), to);
-			Util.checkGLError();
-			glUniform1i(glGetUniformLocation(shaderProgramInterval, "width"), width);
-			glUniform1i(glGetUniformLocation(shaderProgramInterval, "height"), height);
-			glUniform1i(glGetUniformLocation(shaderProgramInterval, "isUsePalette"), isUsePalette ? 1 : 0);
-			Util.checkGLError();
-			
-			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
-			GL11.glBindTexture(GL_TEXTURE_2D, imageTextureId);
-			
-			glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture2"), palettes[paletteId] - 1);
-			GL13.glActiveTexture(GL13.GL_TEXTURE0 + paletteId);
-			glBindTexture(GL_TEXTURE_1D, palettes[paletteId]);
-			
-			int scalingWidth = (int)(width * scale);
-			int scalingHeight = (int)(height * scale);
-				    
-			glBegin(GL_QUADS);
+			if (isImageLoad) {
+				Util.checkGLError();
+				// glUniform1f(glGetUniformLocation(shaderProgramInterval,
+				// "scale"), 1.0f);
+				glUniform1i(glGetUniformLocation(shaderProgramInterval, "from"), from);
+				glUniform1i(glGetUniformLocation(shaderProgramInterval, "to"), to);
+				Util.checkGLError();
+				glUniform1i(glGetUniformLocation(shaderProgramInterval, "width"), width);
+				glUniform1i(glGetUniformLocation(shaderProgramInterval, "height"), height);
+				glUniform1i(glGetUniformLocation(shaderProgramInterval, "isUsePalette"), isUsePalette ? 1 : 0);
+				Util.checkGLError();
+
+				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+				GL11.glBindTexture(GL_TEXTURE_2D, imageTextureId);
+
+				glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture2"), palettes[paletteId] - 1);
+				GL13.glActiveTexture(GL13.GL_TEXTURE0 + paletteId);
+				glBindTexture(GL_TEXTURE_1D, palettes[paletteId]);
+
+				int scalingWidth = (int) (width * scale);
+				int scalingHeight = (int) (height * scale);
+
+				glBegin(GL_QUADS);
 				glTexCoord2d(0, 0);
 				glVertex2i(0, 0);
-			
+
 				glTexCoord2d(1, 0);
 				glVertex2i(scalingWidth, 0);
-			
+
 				glTexCoord2d(1, 1);
 				glVertex2i(scalingWidth, scalingHeight);
-			
+
 				glTexCoord2d(0, 1);
 				glVertex2i(0, scalingHeight);
-			glEnd();
-						
-//			ByteBuffer bytes = BufferUtils.createByteBuffer(width * height * 4);
-//		    //GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
-//		    glGetTexImage(GL_TEXTURE_2D, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
-			//========================================================================
+				glEnd();
+
+				// ByteBuffer bytes = BufferUtils.createByteBuffer(width *
+				// height * 4);
+				// //GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA,
+				// GL11.GL_UNSIGNED_BYTE, bytes);
+				// glGetTexImage(GL_TEXTURE_2D, 0, GL11.GL_RGBA,
+				// GL11.GL_UNSIGNED_BYTE, bytes);
+				// ========================================================================
 			}
-		    glUseProgram(0);
+			moveFrame(0.0f, 0.0f);
+			glUseProgram(0);
 			Display.sync(60);
 			Display.update();
 			
@@ -291,6 +299,12 @@ public class MainRender{
 
 		Display.destroy();
 		System.exit(0);
+	}
+	
+	public static void moveFrame(float x, float y)
+	{
+		moveX = x;
+		moveY = y;
 	}
 	
 	
