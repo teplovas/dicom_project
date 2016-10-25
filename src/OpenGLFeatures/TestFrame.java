@@ -58,7 +58,6 @@ public class TestFrame extends JFrame{
 	private static final long serialVersionUID = 3195487268099554955L;
 	private Map<String, DicomImage> dicomImages = new HashMap<String, DicomImage>();
 	private final AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
-	private final Font boldFont = new Font("SizeButton", Font.BOLD, 16);
 	private final Border border = BorderFactory.createLineBorder(Color.blue, 1);
 	private Thread renderThread;
 	private RangeSlider range;
@@ -67,8 +66,7 @@ public class TestFrame extends JFrame{
 	private List<JLabel> labels = new ArrayList<JLabel>();
 	private String currentFileName;
 	private InfoAction infoAction;
-	Button plusButton;
-	Button minusButton;
+
 	JFileChooser fileChooser;
 	OpenAction openAction;
 
@@ -87,12 +85,6 @@ public class TestFrame extends JFrame{
 		fileChooser.setMultiSelectionEnabled(true);
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("Dicom files", "dcm");
 		fileChooser.setFileFilter(filter);
-
-		plusButton = new Button("+");
-		plusButton.setFont(boldFont);
-
-		minusButton = new Button("-");
-		minusButton.setFont(boldFont);
 
 	    range = new RangeSlider();
 	    range.setOrientation(JSlider.VERTICAL);
@@ -147,7 +139,6 @@ public class TestFrame extends JFrame{
 
 		button.gridx = 2;
 		button.gridy = 1;
-		this.add(plusButton, button);
 
 		GridBagConstraints paletteConstr = new GridBagConstraints();
 		paletteConstr.fill = GridBagConstraints.HORIZONTAL;
@@ -161,7 +152,6 @@ public class TestFrame extends JFrame{
 
 		button.gridx = 2;
 		button.gridy = 2;
-		this.add(minusButton, button);
 
 		paletteConstr.fill = GridBagConstraints.VERTICAL;
 		paletteConstr.gridx = 2;
@@ -229,34 +219,8 @@ public class TestFrame extends JFrame{
 		toolBar.add(palettes);
     }
 	
-//	@Override
-//	  public void mouseMoved(MouseEvent me) {
-//		 // System.out.println("moved!!!");
-//		
-//	  }
-//
-//	  @Override
-//	  public void mouseDragged(MouseEvent me) {
-//		  System.out.println("dragged!!!");
-//		  double newX = me.getPoint().getX();
-//			double newY = me.getPoint().getY();
-//		    MainRender.moveFrame((float)(newX - mX), (float)(newY - mY));
-//		    mX = newX;
-//		    mY = newY;
-//	  }
-	
 	private void setListeners()
 	{
-		plusButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ae) {
-				MainRender.changeScale(0.1f);
-			}
-		});
-		minusButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ae) {
-				MainRender.changeScale(-0.1f);
-			}
-		});
 		range.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				MainRender.setFrom(range.getValue());

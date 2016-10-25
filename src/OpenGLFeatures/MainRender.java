@@ -2,6 +2,7 @@ package OpenGLFeatures;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.input.Cursor;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -233,7 +234,7 @@ public class MainRender{
 		isImageChanged = false;
 	}
 	
-	private static void checkMouse()
+	private static void checkMousePressed()
 	{
 		if(Mouse.isButtonDown(0))
 		{
@@ -251,10 +252,21 @@ public class MainRender{
 		}
 	}
 	
+	private static void checkMouseWheel()
+	{
+		int dWheel = Mouse.getDWheel();
+	    if (dWheel < 0) {
+	        changeScale(-0.1f);
+	    } else if (dWheel > 0){
+	    	changeScale(0.1f);;
+	   }
+	}
+	
 	public static void startRendering() {
 		while (!Display.isCloseRequested() && !closeRequested) {
 			checkInput();
-			checkMouse();
+			checkMousePressed();
+			checkMouseWheel();
 			glClearColor(0.92549f, 0.917647f, 0.917647f, 0.5f);
 			glClear(GL_COLOR_BUFFER_BIT);
 
