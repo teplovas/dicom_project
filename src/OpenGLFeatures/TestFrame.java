@@ -129,16 +129,12 @@ public class TestFrame extends JFrame{
 		paletteMenu.add(createPaletteItem("Hot Metal Blue Color", "hotMetalBlue", 
 				new ImageIcon("res/hotMetalBlueIcon.png")));
 		paletteMenu.add(createPaletteItem("PET 20 Step Color", "pet20", new ImageIcon("res/pet20Icon.png")));
-	    
-	    this.setJMenuBar(menuBar);
 		
-//		JToolBar toolBar = new JToolBar();
-//		toolBar.setRollover(true);
-//		addToolBarElements(toolBar);
+	    this.setJMenuBar(menuBar);
 		
 		fileChooser = new JFileChooser();
 		fileChooser.setMultiSelectionEnabled(true);
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("Dicom files", "dcm");
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("Dicom פאיכû", "dcm");
 		fileChooser.setFileFilter(filter);
 
 	    range = new RangeSlider();
@@ -164,21 +160,6 @@ public class TestFrame extends JFrame{
 			}
 		});
 
-		
-		GridBagConstraints toolB = new GridBagConstraints();
-		toolB.fill = GridBagConstraints.HORIZONTAL;
-		toolB.weightx = 0.5;
-		toolB.gridx = 0;
-		toolB.gridy = 0;
-		toolB.gridwidth = 3;
-		//this.add(toolBar, toolB);
-		
-		GridBagConstraints button = new GridBagConstraints();
-		button.fill = GridBagConstraints.NONE;
-		button.weightx = 0.5;
-		button.gridx = 0;
-		button.gridy = 0;
-
 		GridBagConstraints image = new GridBagConstraints();
 		image.fill = GridBagConstraints.BOTH;
 		image.gridx = 1;
@@ -192,22 +173,16 @@ public class TestFrame extends JFrame{
 		panel.add(canvas, BorderLayout.CENTER);
 		this.add(panel, image);
 
-		button.gridx = 2;
-		button.gridy = 1;
-
 		GridBagConstraints paletteConstr = new GridBagConstraints();
 		paletteConstr.fill = GridBagConstraints.HORIZONTAL;
 		paletteConstr.gridx = 0;
-		paletteConstr.gridy = 1;
+		paletteConstr.gridy = 0;
 		JLabel label = new JLabel("                                               ");
 		label.setSize(200, label.getHeight());
 		label.setPreferredSize(new Dimension(200, 0));
-		//label.setVisible(false);
 		this.add(label, paletteConstr);
-
-		button.gridx = 2;
-		button.gridy = 2;
-
+		
+		
 		paletteConstr.fill = GridBagConstraints.VERTICAL;
 		paletteConstr.gridx = 2;
 		paletteConstr.gridy = 3;
