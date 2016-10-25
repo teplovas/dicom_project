@@ -3,6 +3,7 @@ package OpenGLFeatures;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -63,6 +64,10 @@ public class MainRender{
 	
 	private static float moveX = 0.0f;
 	private static float moveY = 0.0f;
+	
+	private static float lastX;
+	private static float lastY;
+	private static boolean isFirstMove = true;
 	
 	
 	public MainRender(Object[] imageBuffer, int width, int height, Canvas canv)
@@ -228,10 +233,28 @@ public class MainRender{
 		isImageChanged = false;
 	}
 	
+	private static void checkMouse()
+	{
+		if(Mouse.isButtonDown(0))
+		{
+			if(!isFirstMove)
+			{
+				moveFrame((float)(Mouse.getX() - lastX), (float)(lastY - Mouse.getY()));
+			}
+			lastX = Mouse.getX();
+			lastY = Mouse.getY();
+			isFirstMove = false;
+		}
+		else
+		{
+			isFirstMove = true;
+		}
+	}
 	
 	public static void startRendering() {
 		while (!Display.isCloseRequested() && !closeRequested) {
 			checkInput();
+			checkMouse();
 			glClearColor(0.92549f, 0.917647f, 0.917647f, 0.5f);
 			glClear(GL_COLOR_BUFFER_BIT);
 

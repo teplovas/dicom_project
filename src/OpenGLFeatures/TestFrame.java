@@ -12,7 +12,6 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -22,9 +21,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionAdapter;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -57,7 +53,7 @@ import Application.DicomTagsDialog;
 import tools.DicomImage;
 import tools.ImageHelper;
 
-public class TestFrame extends JFrame implements MouseMotionListener{
+public class TestFrame extends JFrame{
 
 	private static final long serialVersionUID = 3195487268099554955L;
 	private Map<String, DicomImage> dicomImages = new HashMap<String, DicomImage>();
@@ -71,7 +67,6 @@ public class TestFrame extends JFrame implements MouseMotionListener{
 	private List<JLabel> labels = new ArrayList<JLabel>();
 	private String currentFileName;
 	private InfoAction infoAction;
-	private double mX, mY;
 	Button plusButton;
 	Button minusButton;
 	JFileChooser fileChooser;
@@ -79,8 +74,6 @@ public class TestFrame extends JFrame implements MouseMotionListener{
 
 	public TestFrame() {
 		super("DICOM");
-		addMouseMotionListener(this);
-		//this.addMouseMotionListener(new mouseMovedEventHandler());
 	}
 
 	public void createFrame() {
@@ -236,21 +229,21 @@ public class TestFrame extends JFrame implements MouseMotionListener{
 		toolBar.add(palettes);
     }
 	
-	@Override
-	  public void mouseMoved(MouseEvent me) {
-		 // System.out.println("moved!!!");
-		
-	  }
-
-	  @Override
-	  public void mouseDragged(MouseEvent me) {
-		  System.out.println("dragged!!!");
-		  double newX = me.getPoint().getX();
-			double newY = me.getPoint().getY();
-		    MainRender.moveFrame((float)(newX - mX), (float)(newY - mY));
-		    mX = newX;
-		    mY = newY;
-	  }
+//	@Override
+//	  public void mouseMoved(MouseEvent me) {
+//		 // System.out.println("moved!!!");
+//		
+//	  }
+//
+//	  @Override
+//	  public void mouseDragged(MouseEvent me) {
+//		  System.out.println("dragged!!!");
+//		  double newX = me.getPoint().getX();
+//			double newY = me.getPoint().getY();
+//		    MainRender.moveFrame((float)(newX - mX), (float)(newY - mY));
+//		    mX = newX;
+//		    mY = newY;
+//	  }
 	
 	private void setListeners()
 	{
@@ -466,41 +459,6 @@ public class TestFrame extends JFrame implements MouseMotionListener{
 		}
 		abstract public void actionPerformed(ActionEvent e);
 	}
-	
-	public class MouseMotionCanvas extends Canvas implements MouseMotionListener {
-		private static final long serialVersionUID = 4338595933003479005L;
-		private double mX, mY;
-
-		  public MouseMotionCanvas() {
-		    addMouseMotionListener(this);
-		    setVisible(true);
-		  }
-
-		  @Override
-		  public void mouseMoved(MouseEvent me) {
-			  System.out.println("moved!!!");
-			double newX = me.getPoint().getX();
-			double newY = me.getPoint().getY();
-		    MainRender.moveFrame((float)(newX - mX), (float)(newY - mY));
-		    mX = newX;
-		    mY = newY;
-		  }
-
-		  @Override
-		  public void mouseDragged(MouseEvent me) {
-			  System.out.println("dragged!!!");
-		    mouseMoved(me);
-		  }
-		}
-
-	class mouseMovedEventHandler extends MouseMotionAdapter
-	  {           
-	    @Override
-	    public void mouseDragged(MouseEvent e)
-	    {
-	        System.out.println(String.format("MouseDragged via MouseMotionAdapter / X,Y : %s,%s ", e.getX(), e.getY()));
-	    }
-	  } 
 	
 	public static void main(String[] args) {
 		try {
