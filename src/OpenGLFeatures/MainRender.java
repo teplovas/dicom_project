@@ -583,7 +583,6 @@ public class MainRender{
 	public static void notUsePalette()
 	{
 		isUsePalette = false;
-		return;
 	}
 	
 	public static void changeScale(float scale)

@@ -38,11 +38,15 @@ import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
@@ -77,9 +81,60 @@ public class TestFrame extends JFrame{
 	public void createFrame() {
 		JPanel panel = new JPanel();
 		
-		JToolBar toolBar = new JToolBar();
-		toolBar.setRollover(true);
-		addToolBarElements(toolBar);
+		JMenuBar menuBar = new JMenuBar();
+		
+		ImageIcon imageIcon = new ImageIcon("res/fileMenu.png");
+		JMenu fileMenu = new JMenu("Файл");
+		fileMenu.setIcon(imageIcon);
+		
+		fileMenu.setHorizontalTextPosition(SwingConstants.CENTER);
+		fileMenu.setVerticalTextPosition(SwingConstants.BOTTOM);
+		menuBar.add(fileMenu);
+		
+		imageIcon = new ImageIcon("res/openIcon.png");
+		JMenuItem openFileItem = new JMenuItem("Открыть", imageIcon);
+		openFileItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				openFileActions();
+			}
+		});
+	    fileMenu.add(openFileItem);
+	    
+	    imageIcon = new ImageIcon("res/infoIcon.png");
+	    JMenuItem infoFileItem = new JMenuItem("Информация", imageIcon);
+		infoFileItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(currentFileName != null)
+				{
+					DicomTagsDialog dlg = new DicomTagsDialog(TestFrame.this, dicomImages.get(currentFileName));
+					dlg.setSize(500, 500);
+				}
+			}
+		});
+	    fileMenu.add(infoFileItem);
+	    
+	    imageIcon = new ImageIcon("res/paletteIcon.png");
+		JMenu paletteMenu = new JMenu("Палитра");
+		paletteMenu.setIcon(imageIcon);
+		
+		paletteMenu.setHorizontalTextPosition(SwingConstants.CENTER);
+		paletteMenu.setVerticalTextPosition(SwingConstants.BOTTOM);
+		menuBar.add(paletteMenu);
+		
+		paletteMenu.add(createPaletteItem("Нет", "def", null));
+		paletteMenu.add(createPaletteItem("Hot Iron", "hotIron", new ImageIcon("res/hotIronIcon.png")));
+		paletteMenu.add(createPaletteItem("PET Color", "pet", new ImageIcon("res/petIcon.png")));
+		paletteMenu.add(createPaletteItem("Hot Metal Blue Color", "hotMetalBlue", 
+				new ImageIcon("res/hotMetalBlueIcon.png")));
+		paletteMenu.add(createPaletteItem("PET 20 Step Color", "pet20", new ImageIcon("res/pet20Icon.png")));
+	    
+	    this.setJMenuBar(menuBar);
+		
+//		JToolBar toolBar = new JToolBar();
+//		toolBar.setRollover(true);
+//		addToolBarElements(toolBar);
 		
 		fileChooser = new JFileChooser();
 		fileChooser.setMultiSelectionEnabled(true);
@@ -116,7 +171,7 @@ public class TestFrame extends JFrame{
 		toolB.gridx = 0;
 		toolB.gridy = 0;
 		toolB.gridwidth = 3;
-		this.add(toolBar, toolB);
+		//this.add(toolBar, toolB);
 		
 		GridBagConstraints button = new GridBagConstraints();
 		button.fill = GridBagConstraints.NONE;
@@ -193,6 +248,28 @@ public class TestFrame extends JFrame{
 		}
 	}
 	
+	private JMenuItem createPaletteItem(String name, String code, Icon icon)
+	{
+		JMenuItem peletteItem = new JMenuItem(name, icon);
+		peletteItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(currentFileName != null)
+				{
+					if(!"def".equals(code))
+					{
+						MainRender.changePalette(code);
+					}
+					else
+					{
+						MainRender.notUsePalette();
+					}
+				}
+			}
+		});
+		return peletteItem;
+	}
+	
 	private void addToolBarElements(JToolBar toolBar) {
 		
 		ImageIcon imageIcon = new ImageIcon("res/openIcon.png");
@@ -227,34 +304,34 @@ public class TestFrame extends JFrame{
 				MainRender.setTo(range.getUpperValue());
 			}
 		});
-		palettes.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent ie) {
-
-				switch (palettes.getSelectedItem()) {
-				case "Hot Iron Color": {
-					MainRender.changePalette("hotIron");
-					break;
-				}
-				case "PET Color": {
-					MainRender.changePalette("pet");
-					break;
-				}
-				case "Hot Metal Blue Color": {
-					MainRender.changePalette("hotMetalBlue");
-					break;
-				}
-				case "PET 20 Step Color": {
-					MainRender.changePalette("pet20");
-					break;
-				}
-				case "": {
-					MainRender.notUsePalette();
-					break;
-				}
-				}
-
-			}
-		});
+//		palettes.addItemListener(new ItemListener() {
+//			public void itemStateChanged(ItemEvent ie) {
+//
+//				switch (palettes.getSelectedItem()) {
+//				case "Hot Iron Color": {
+//					MainRender.changePalette("hotIron");
+//					break;
+//				}
+//				case "PET Color": {
+//					MainRender.changePalette("pet");
+//					break;
+//				}
+//				case "Hot Metal Blue Color": {
+//					MainRender.changePalette("hotMetalBlue");
+//					break;
+//				}
+//				case "PET 20 Step Color": {
+//					MainRender.changePalette("pet20");
+//					break;
+//				}
+//				case "": {
+//					MainRender.notUsePalette();
+//					break;
+//				}
+//				}
+//
+//			}
+//		});
 	}
 
 	private void setRange(int from, int to) {
@@ -286,9 +363,9 @@ public class TestFrame extends JFrame{
 
 		setRange(from, to);
 
-		palettes.setEnabled(!dicomImage.isColor());
+		//palettes.setEnabled(!dicomImage.isColor());
 		if (dicomImage.isColor()) {
-			palettes.select(0);
+			//palettes.select(0);
 			MainRender.notUsePalette();
 		}
 		range.setEnabled(true);
@@ -357,44 +434,49 @@ public class TestFrame extends JFrame{
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			try {
-				int returnVal = fileChooser.showOpenDialog(TestFrame.this);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File[] files = fileChooser.getSelectedFiles();
-					TestFrame.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-					String fileName = null;
-					dicomImages.clear();
-					labels.clear();
-					if (files.length > 1) {
-						JPanel miniPanel = new JPanel();
-						GridLayout gd = new GridLayout(files.length, 1);
-						gd.setVgap(10);
-						miniPanel.setLayout(gd);
+			openFileActions();
+		}
+	}
+	
+	private void openFileActions()
+	{
+		try {
+			int returnVal = fileChooser.showOpenDialog(TestFrame.this);
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				File[] files = fileChooser.getSelectedFiles();
+				TestFrame.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				String fileName = null;
+				dicomImages.clear();
+				labels.clear();
+				if (files.length > 1) {
+					JPanel miniPanel = new JPanel();
+					GridLayout gd = new GridLayout(files.length, 1);
+					gd.setVgap(10);
+					miniPanel.setLayout(gd);
 
-						for (File f : files) {
-							fileName = f.getAbsolutePath();
-							long start = System.currentTimeMillis();
-							DicomImage image = readImageFromFile(fileName);
-							// System.out.println("read: " +
-							// (System.currentTimeMillis() - start));
-							start = System.currentTimeMillis();
-							JLabel label = createMiniature(image, fileName);
-							// System.out.println("mini: " +
-							// (System.currentTimeMillis() - start));
-							labels.add(label);
-							miniPanel.add(label);
-						}
-
-						miniaturesPane.setViewportView(miniPanel);
-					} else {
-						fileName = files[0].getAbsolutePath();
-						readImageFromFile(fileName);
+					for (File f : files) {
+						fileName = f.getAbsolutePath();
+						long start = System.currentTimeMillis();
+						DicomImage image = readImageFromFile(fileName);
+						// System.out.println("read: " +
+						// (System.currentTimeMillis() - start));
+						start = System.currentTimeMillis();
+						JLabel label = createMiniature(image, fileName);
+						// System.out.println("mini: " +
+						// (System.currentTimeMillis() - start));
+						labels.add(label);
+						miniPanel.add(label);
 					}
-					showImage(fileName);
+
+					miniaturesPane.setViewportView(miniPanel);
+				} else {
+					fileName = files[0].getAbsolutePath();
+					readImageFromFile(fileName);
 				}
-			} finally {
-				TestFrame.this.setCursor(Cursor.getDefaultCursor());
+				showImage(fileName);
 			}
+		} finally {
+			TestFrame.this.setCursor(Cursor.getDefaultCursor());
 		}
 	}
 
