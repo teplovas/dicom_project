@@ -25,9 +25,9 @@ public class ImageHelper <T> {
 //		return imageDataBuffer;
 //	}
 	
-	public static BufferedImage getBufferedImage(Object[] buffer, int from, int to)
+	public static BufferedImage getBufferedImage(Object[] buffer, int from, int to, int w, int h)
 	{
-		return ConvertTools.convertDataToGreyImage(buffer, from, to);
+		return ConvertTools.convertDataToGreyImage(buffer, from, to, w, h);
 	}
 	
 	public static DicomImage openImage(String fileName) throws Exception

@@ -11,6 +11,10 @@ public class DicomImage {
 	private Object[] imageBuffer;
 	private boolean isColor;
 	private List<String> tagsValues;
+	private String studyId;
+	private String seriaId;
+	private String studyDescription;
+	private String seriaDescription;
 	
 	
 	public Integer getWidth() {
@@ -54,5 +58,29 @@ public class DicomImage {
 	}
 	public void setTagsValues(List<String> tagsValues) {
 		this.tagsValues = tagsValues;
+	}
+	public String getStudyId() {
+		return studyId;
+	}
+	public void setStudyId(String studyId) {
+		this.studyId = studyId;
+	}
+	public String getSeriaId() {
+		return seriaId;
+	}
+	public void setSeriaId(String seriaId) {
+		this.seriaId = seriaId;
+	}
+	public String getStudyDescription() {
+		return studyDescription;
+	}
+	public void setStudyDescription(String studyDescription) {
+		this.studyDescription = studyDescription;
+	}
+	public String getSeriaDescription() {
+		return seriaDescription;
+	}
+	public void setSeriaDescription(String seriaDescription) {
+		this.seriaDescription = seriaDescription;
 	}
 }

@@ -254,12 +254,14 @@ public class MainRender{
 	
 	private static void checkMouseWheel()
 	{
-		int dWheel = Mouse.getDWheel();
-	    if (dWheel < 0) {
-	        changeScale(-0.1f);
-	    } else if (dWheel > 0){
-	    	changeScale(0.1f);;
-	   }
+		if (Mouse.isInsideWindow()) {
+			int dWheel = Mouse.getDWheel();
+			if (dWheel < 0) {
+				changeScale(-0.1f);
+			} else if (dWheel > 0) {
+				changeScale(0.1f);
+			}
+		}
 	}
 	
 	public static void startRendering() {

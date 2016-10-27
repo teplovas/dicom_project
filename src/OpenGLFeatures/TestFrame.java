@@ -19,17 +19,28 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -51,28 +62,30 @@ import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import Application.DicomTagsDialog;
+import Application.*;
 import tools.DicomImage;
 import tools.ImageHelper;
 
 public class TestFrame extends JFrame{
 
 	private static final long serialVersionUID = 3195487268099554955L;
-	private Map<String, DicomImage> dicomImages = new HashMap<String, DicomImage>();
+	private Map<String, DicomImage> dicomImages = new LinkedHashMap<String, DicomImage>();
 	private final AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
 	private final Border border = BorderFactory.createLineBorder(Color.blue, 1);
 	private Thread renderThread;
 	private RangeSlider range;
-	private Choice palettes;
 	private JScrollPane miniaturesPane;
-	private List<JLabel> labels = new ArrayList<JLabel>();
+	private Map<String, JLabel> labels = new LinkedHashMap<String, JLabel>();
 	private String currentFileName;
-	private InfoAction infoAction;
+	private Map<String, DicomSeria> series = new HashMap<String, DicomSeria>();
+	private DicomSeria currentSeria;
+	private boolean isMultipleSelection = false;
 
 	JFileChooser fileChooser;
-	OpenAction openAction;
 
 	public TestFrame() {
 		super("DICOM");
@@ -84,8 +97,9 @@ public class TestFrame extends JFrame{
 		JMenuBar menuBar = new JMenuBar();
 		
 		ImageIcon imageIcon = new ImageIcon("res/fileMenu.png");
-		JMenu fileMenu = new JMenu("Файл");
+		JMenu fileMenu = new JMenu("");
 		fileMenu.setIcon(imageIcon);
+		fileMenu.setToolTipText("Файл");
 		
 		fileMenu.setHorizontalTextPosition(SwingConstants.CENTER);
 		fileMenu.setVerticalTextPosition(SwingConstants.BOTTOM);
@@ -116,8 +130,9 @@ public class TestFrame extends JFrame{
 	    fileMenu.add(infoFileItem);
 	    
 	    imageIcon = new ImageIcon("res/paletteIcon.png");
-		JMenu paletteMenu = new JMenu("Палитра");
+		JMenu paletteMenu = new JMenu("");
 		paletteMenu.setIcon(imageIcon);
+		paletteMenu.setToolTipText("Палитра");
 		
 		paletteMenu.setHorizontalTextPosition(SwingConstants.CENTER);
 		paletteMenu.setVerticalTextPosition(SwingConstants.BOTTOM);
@@ -129,6 +144,26 @@ public class TestFrame extends JFrame{
 		paletteMenu.add(createPaletteItem("Hot Metal Blue Color", "hotMetalBlue", 
 				new ImageIcon("res/hotMetalBlueIcon.png")));
 		paletteMenu.add(createPaletteItem("PET 20 Step Color", "pet20", new ImageIcon("res/pet20Icon.png")));
+		
+		imageIcon = new ImageIcon("res/multIcon.png");
+		JMenu multipleSelection = new JMenu("");
+		multipleSelection.setIcon(imageIcon);
+		multipleSelection.setToolTipText("Серия кадров");
+		multipleSelection.setHorizontalTextPosition(SwingConstants.CENTER);
+		multipleSelection.setVerticalTextPosition(SwingConstants.BOTTOM);
+		multipleSelection.addMenuListener(new MenuListener() {
+	        @Override
+	        public void menuSelected(MenuEvent e) {
+	            isMultipleSelection = true;
+	        }
+	        @Override
+	        public void menuDeselected(MenuEvent e) {
+	        }
+	        @Override
+	        public void menuCanceled(MenuEvent e) {
+	        }
+	    });
+		menuBar.add(multipleSelection);
 		
 	    this.setJMenuBar(menuBar);
 		
@@ -160,44 +195,44 @@ public class TestFrame extends JFrame{
 			}
 		});
 
-		GridBagConstraints image = new GridBagConstraints();
-		image.fill = GridBagConstraints.BOTH;
-		image.gridx = 1;
-		image.gridy = 0;
-		image.gridheight = 5;
+		GridBagConstraints constraint = new GridBagConstraints();
+		constraint.fill = GridBagConstraints.HORIZONTAL;
+		constraint.gridx = 0;
+		constraint.gridy = 1;
+		JLabel label = new JLabel("                                               ");
+		this.add(label, constraint);
+		
+		constraint.fill = GridBagConstraints.BOTH;
+		constraint.gridx = 0;
+		constraint.gridy = 2;
+		constraint.gridheight = 3;
+
+		miniaturesPane = new JScrollPane();
+		miniaturesPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		miniaturesPane.setPreferredSize(new Dimension(200, 0));
+		miniaturesPane.setFocusable(true);
+		this.add(miniaturesPane, constraint);
+		
+		GridBagConstraints imageConstraint = new GridBagConstraints();
+		imageConstraint.fill = GridBagConstraints.BOTH;
+		imageConstraint.ipadx = 100;
+		imageConstraint.gridx = 1;
+		imageConstraint.gridy = 0;
+		imageConstraint.gridheight = 5;
 
 		//panel.setPreferredSize(new Dimension(800, 600));
 		panel.setMinimumSize(new Dimension(1000, 600));
 		//panel.setMaximumSize(new Dimension(800, 600));
 		panel.setLayout(new BorderLayout());
 		panel.add(canvas, BorderLayout.CENTER);
-		this.add(panel, image);
+		this.add(panel, imageConstraint);
 
-		GridBagConstraints paletteConstr = new GridBagConstraints();
-		paletteConstr.fill = GridBagConstraints.HORIZONTAL;
-		paletteConstr.gridx = 0;
-		paletteConstr.gridy = 0;
-		JLabel label = new JLabel("                                               ");
-		label.setSize(200, label.getHeight());
-		label.setPreferredSize(new Dimension(200, 0));
-		this.add(label, paletteConstr);
-		
-		
-		paletteConstr.fill = GridBagConstraints.VERTICAL;
-		paletteConstr.gridx = 2;
-		paletteConstr.gridy = 3;
-		paletteConstr.gridheight = 3;
-		this.add(range, paletteConstr);
-
-		paletteConstr.fill = GridBagConstraints.BOTH;
-		paletteConstr.gridx = 0;
-		paletteConstr.gridy = 2;
-		paletteConstr.gridheight = 3;
-
-		miniaturesPane = new JScrollPane();
-		miniaturesPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		miniaturesPane.setPreferredSize(new Dimension(200, 0));
-		this.add(miniaturesPane, paletteConstr);
+		constraint.fill = GridBagConstraints.BOTH;
+		//constraint.ipadx = 200;
+		constraint.gridx = 2;
+		constraint.gridy = 3;
+		constraint.gridheight = 3;
+		this.add(range, constraint);
 
 		setListeners();
 
@@ -245,32 +280,7 @@ public class TestFrame extends JFrame{
 		return peletteItem;
 	}
 	
-	private void addToolBarElements(JToolBar toolBar) {
-		
-		ImageIcon imageIcon = new ImageIcon("res/openIcon.png");
-		openAction = new OpenAction(imageIcon, "Открыть файл"); 
-        toolBar.add(openAction);
-        
-        imageIcon = new ImageIcon("res/infoIcon.png");
-        infoAction = new InfoAction(imageIcon, "Информация о файле"); 
-        toolBar.add(infoAction);
-        
-        toolBar.addSeparator();
-        JLabel paletteLabel = new JLabel("Палитра");
-        toolBar.add(paletteLabel);
-        
-        palettes = new Choice();
-        palettes.add("");
-        palettes.add("Hot Iron Color");
-		palettes.add("PET Color");
-		palettes.add("Hot Metal Blue Color");
-		palettes.add("PET 20 Step Color");
-		palettes.select(0);
-		palettes.setEnabled(false);
-		
-		toolBar.add(palettes);
-    }
-	
+
 	private void setListeners()
 	{
 		range.addChangeListener(new ChangeListener() {
@@ -279,35 +289,50 @@ public class TestFrame extends JFrame{
 				MainRender.setTo(range.getUpperValue());
 			}
 		});
-//		palettes.addItemListener(new ItemListener() {
-//			public void itemStateChanged(ItemEvent ie) {
-//
-//				switch (palettes.getSelectedItem()) {
-//				case "Hot Iron Color": {
-//					MainRender.changePalette("hotIron");
-//					break;
-//				}
-//				case "PET Color": {
-//					MainRender.changePalette("pet");
-//					break;
-//				}
-//				case "Hot Metal Blue Color": {
-//					MainRender.changePalette("hotMetalBlue");
-//					break;
-//				}
-//				case "PET 20 Step Color": {
-//					MainRender.changePalette("pet20");
-//					break;
-//				}
-//				case "": {
-//					MainRender.notUsePalette();
-//					break;
-//				}
-//				}
-//
-//			}
-//		});
+		
+		this.addMouseWheelListener(new MouseWheelListener() {
+			@Override
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				if(isMultipleSelection)
+				{
+					int notches = e.getWheelRotation();
+				       if (notches < 0) {
+				           //up
+				    	   Iterator<String> it = currentSeria.getImages().iterator();
+				    	   while(it.hasNext())
+				    	   {
+				    		   if(it.next().equals(currentFileName))
+				    		   {
+				    			   if(it.hasNext())
+				    			   {
+				    				   showImage(it.next());
+				    			   }
+				    			   break;
+				    		   }
+				    	   }
+				       } else {
+				          //down
+				    	   List<String> reverse = new ArrayList<String>(currentSeria.getImages());
+				    	   Collections.reverse(reverse);
+				    	   Iterator<String> it = reverse.iterator();
+				    	   while(it.hasNext())
+				    	   {
+				    		   if(it.next().equals(currentFileName))
+				    		   {
+				    			   if(it.hasNext())
+				    			   {
+				    				   showImage(it.next());
+				    			   }
+				    			   break;
+				    		   }
+				    	   }
+				       }
+				}
+			}
+			
+		});
 	}
+	
 
 	private void setRange(int from, int to) {
 		range.setMinimum(from);
@@ -338,9 +363,7 @@ public class TestFrame extends JFrame{
 
 		setRange(from, to);
 
-		//palettes.setEnabled(!dicomImage.isColor());
 		if (dicomImage.isColor()) {
-			//palettes.select(0);
 			MainRender.notUsePalette();
 		}
 		range.setEnabled(true);
@@ -367,14 +390,15 @@ public class TestFrame extends JFrame{
 	 * Сделать миниатюру для изображения
 	 * 
 	 * @param dcmImg
-	 * @param fileName
+	 * @param seriaName
 	 * @return
 	 */
-	private JLabel createMiniature(DicomImage dcmImg, String fileName) {
+	private JLabel createMiniature(DicomImage dcmImg, String seriaName, Integer count) {
 		int newWidth = dcmImg.getWidth() / 10;
 		int newHeight = dcmImg.getHeight() / 10;
 
-		BufferedImage bigImg = ImageHelper.getBufferedImage(dcmImg.getImageBuffer(), dcmImg.getFrom(), dcmImg.getTo());
+		BufferedImage bigImg = ImageHelper.getBufferedImage(dcmImg.getImageBuffer(), dcmImg.getFrom(), dcmImg.getTo()
+				, dcmImg.getWidth(), dcmImg.getHeight());
 		BufferedImage smallImage = new BufferedImage(newWidth, newHeight,
 				dcmImg.isColor() ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_BYTE_GRAY);
 		Graphics g = smallImage.createGraphics();
@@ -383,35 +407,35 @@ public class TestFrame extends JFrame{
 
 		ImageIcon imageIcon = new ImageIcon(smallImage);
 		JLabel imagelabel = new JLabel("", imageIcon, JLabel.CENTER);
+		imagelabel.setText(count + "");
+		
 		imagelabel.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				showImage(fileName);
-				clearLabelsBorder();
-				imagelabel.setBorder(border);
+				currentSeria = series.get(seriaName);
+				showImage(series.get(seriaName).getImages().get(0));
+				//clearLabelsBorder();
+				//imagelabel.setBorder(border);
 			}
 		});
 
 		return imagelabel;
 	}
+	
+	private void chooseImageAction(String fileName)
+	{
+		JLabel label = labels.get(fileName);
+		showImage(fileName);
+		clearLabelsBorder();
+		label.setBorder(border);
+	}
 
 	private void clearLabelsBorder() {
-		for (JLabel label : labels) {
+		for (JLabel label : labels.values()) {
 			label.setBorder(null);
 		}
 	}
 	
-	class OpenAction extends ToolBarAction {
-		private static final long serialVersionUID = 3876578108001749755L;
-
-		public OpenAction(Icon icon, String description) {
-			super(icon, description);
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			openFileActions();
-		}
-	}
 	
 	private void openFileActions()
 	{
@@ -423,63 +447,109 @@ public class TestFrame extends JFrame{
 				String fileName = null;
 				dicomImages.clear();
 				labels.clear();
+				series.clear();
+				
+				Map<String, DicomStudy> stuies = new HashMap<String, DicomStudy>();
+				
 				if (files.length > 1) {
 					JPanel miniPanel = new JPanel();
-					GridLayout gd = new GridLayout(files.length, 1);
-					gd.setVgap(10);
-					miniPanel.setLayout(gd);
+					miniPanel.setFocusable(true);
+					
+					DicomSeria seria;
+					DicomStudy study;
 
 					for (File f : files) {
 						fileName = f.getAbsolutePath();
 						long start = System.currentTimeMillis();
 						DicomImage image = readImageFromFile(fileName);
-						// System.out.println("read: " +
-						// (System.currentTimeMillis() - start));
+						System.out.println("read from file: " +
+								 (System.currentTimeMillis() - start));
 						start = System.currentTimeMillis();
-						JLabel label = createMiniature(image, fileName);
-						// System.out.println("mini: " +
-						// (System.currentTimeMillis() - start));
-						labels.add(label);
-						miniPanel.add(label);
+						if(!series.containsKey(image.getSeriaId()))
+						{
+							seria = new DicomSeria(image.getSeriaId(), image.getStudyId());
+							seria.setDescription(image.getSeriaDescription());
+							seria.addImage(fileName);
+							seria.setMiniature(image);
+							series.put(image.getSeriaId(), seria);
+						}
+						else
+						{
+							seria = series.get(image.getSeriaId());
+							seria.addImage(fileName);
+							series.put(image.getSeriaId(), seria);
+						}
+						if(!stuies.containsKey(image.getStudyId()))
+						{
+							study = new DicomStudy(image.getStudyId());
+							study.setDescription(image.getStudyDescription());
+						}
+						else
+						{
+							study = stuies.get(image.getStudyId());
+						}
+						if(!study.getSeries().contains(seria))
+						{
+							study.addSeria(seria);
+						}
+						stuies.put(study.getId(), study);
+						
+						 System.out.println("add to seria: " +
+						 (System.currentTimeMillis() - start));
 					}
 
+					long start = System.currentTimeMillis();
+					
+					 System.out.println("fill studies " +
+					 (System.currentTimeMillis() - start));
+					
+					GridLayout gd = new GridLayout(stuies.size(), 1);
+					gd.setVgap(10);
+					miniPanel.setLayout(gd);
+					
+					start = System.currentTimeMillis();
+					for(DicomStudy s: stuies.values())
+					{
+						miniPanel.add(createStudyPart(s));
+					}
+					System.out.println("create studis part " +
+							 (System.currentTimeMillis() - start));
+					
 					miniaturesPane.setViewportView(miniPanel);
 				} else {
 					fileName = files[0].getAbsolutePath();
 					readImageFromFile(fileName);
+					showImage(fileName);
 				}
-				showImage(fileName);
 			}
 		} finally {
 			TestFrame.this.setCursor(Cursor.getDefaultCursor());
 		}
 	}
-
-	class InfoAction extends ToolBarAction {
-		private static final long serialVersionUID = 6140859768252974830L;
-
-		public InfoAction(Icon icon, String description) {
-			super(icon, description);
+	
+	private JPanel createStudyPart(DicomStudy study)
+	{
+		JPanel studyPanel = new JPanel();
+		
+		GridLayout gd = new GridLayout(study.getSeries().size(), 1);
+		gd.setVgap(10);
+		studyPanel.setLayout(gd);
+		studyPanel.setFocusable(true);
+		
+		Border border = BorderFactory.createTitledBorder(study.getDescription());
+		studyPanel.setBorder(border);
+		
+		for(DicomSeria seria : study.getSeries())
+		{
+			JLabel label = createMiniature(seria.getMiniature(), seria.getId(), seria.getImages().size());
+			border = BorderFactory.createTitledBorder(seria.getDescription());
+			label.setBorder(border);
+			studyPanel.add(label);
 		}
-
-		public void actionPerformed(ActionEvent e) {
-			if(currentFileName != null)
-			{
-				DicomTagsDialog dlg = new DicomTagsDialog(TestFrame.this, dicomImages.get(currentFileName));
-				dlg.setSize(500, 500);
-			}
-		}
+		
+		return studyPanel;
 	}
 	
-	abstract class ToolBarAction extends AbstractAction {
-		public ToolBarAction(Icon icon, String description) {
-			super("", icon);
-			putValue(ACCELERATOR_KEY,
-					KeyStroke.getKeyStroke('c', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-			putValue(SHORT_DESCRIPTION, description);
-		}
-		abstract public void actionPerformed(ActionEvent e);
-	}
 	
 	public static void main(String[] args) {
 		try {

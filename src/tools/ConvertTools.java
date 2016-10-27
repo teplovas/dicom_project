@@ -94,15 +94,15 @@ public class ConvertTools {
 		return img;
 	}
 	
-	public static <T> BufferedImage convertDataToGreyImage(T[] dataBuffer, int from, int to)
+	public static <T> BufferedImage convertDataToGreyImage(T[] dataBuffer, int from, int to, int w, int h)
 	{
 		BufferedImage img = new BufferedImage(cols,
 				rows, BufferedImage.TYPE_BYTE_GRAY);
 		WritableRaster image = img.getRaster();
 		int s = dataBuffer.length;
 		int size = s;
-		for (int row = 0; row < rows; row++) {
-			for (int col = 0; col < cols; col++) {
+		for (int row = 0; row < h; row++) {
+			for (int col = 0; col < w; col++) {
 
 				T b = dataBuffer[s - size];
 				size--;
@@ -176,6 +176,12 @@ public class ConvertTools {
 			rows = r.getInt(false);
 			cols = c.getInt(false);
 			
+			dcmImg.setSeriaId(dcmObj.getString(Tag.SeriesInstanceUID));
+			dcmImg.setStudyId(dcmObj.getString(Tag.StudyInstanceUID));
+			
+			dcmImg.setSeriaDescription(dcmObj.getString(Tag.SeriesDescription));
+			dcmImg.setStudyDescription(dcmObj.getString(Tag.StudyDescription));
+			
 			if(bitsPerPixel == 16)
 			{
 				short[] a = dcmObj.getShorts(Tag.PixelData);
@@ -217,7 +223,7 @@ public class ConvertTools {
 			dcmImg.setTagsValues(listHeader(dcmObj));
 		}catch(Exception e)
 		{
-			
+			System.out.println("ERROR: " + e.getMessage());
 		}
 		finally{
 			din.close();
