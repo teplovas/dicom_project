@@ -156,8 +156,10 @@ public class ConvertTools {
 		Object[] data = null;
 		DicomImage dcmImg = new DicomImage();
 		try{
+			long start = System.currentTimeMillis();
 			din = new DicomInputStream(new File(fileName));
 			dcmObj = din.readDicomObject();
+			System.out.print((System.currentTimeMillis() - start) + "\t");
 			DicomElement photometricInterpretation = dcmObj
 					.get(Tag.PhotometricInterpretation);
 			//photometricInterpretation.getValueAsString(arg0, arg1)
@@ -184,16 +186,24 @@ public class ConvertTools {
 			
 			if(bitsPerPixel == 16)
 			{
+				start = System.currentTimeMillis();
 				short[] a = dcmObj.getShorts(Tag.PixelData);
-				data = ArrayUtils.toObject(dcmObj.getShorts(Tag.PixelData));
+				System.out.print((System.currentTimeMillis() - start) + "\t");
+				start = System.currentTimeMillis();
+				data = ArrayUtils.toObject(a/*dcmObj.getShorts(Tag.PixelData)*/);
+				System.out.print((System.currentTimeMillis() - start) + "\t");
 			}
 			if(bitsPerPixel == 8)
 			{
-				data = (Object[])ArrayUtils.toObject(dcmObj.getBytes(Tag.PixelData));
+				start = System.currentTimeMillis();
+				data = /*(Object[])*/ArrayUtils.toObject(dcmObj.getBytes(Tag.PixelData));
+				System.out.print((System.currentTimeMillis() - start) + "\t");
 			}
+			//System.out.print((System.currentTimeMillis() - start) + "\t");
 			int size = 0;
 			minValue = Integer.MAX_VALUE;
 			maxValue = Integer.MIN_VALUE;
+			start = System.currentTimeMillis();
 			while(size != data.length)
 			{
 				Object tmp = data[size];
@@ -214,6 +224,8 @@ public class ConvertTools {
 				}
 				size++;
 			}
+			System.out.print((System.currentTimeMillis() - start) + "\t");
+			System.out.print(fileName + "\t");
 			dcmImg.setImageBuffer(data);
 			dcmImg.setFrom(minValue);
 			dcmImg.setTo(maxValue);

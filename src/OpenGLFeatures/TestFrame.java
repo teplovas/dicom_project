@@ -53,6 +53,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JToolBar;
@@ -79,6 +80,7 @@ public class TestFrame extends JFrame{
 	private Thread renderThread;
 	private RangeSlider range;
 	private JScrollPane miniaturesPane;
+	private JSlider changeImageSlider;
 	private Map<String, JLabel> labels = new LinkedHashMap<String, JLabel>();
 	private String currentFileName;
 	private Map<String, DicomSeria> series = new HashMap<String, DicomSeria>();
@@ -94,6 +96,7 @@ public class TestFrame extends JFrame{
 	public void createFrame() {
 		JPanel panel = new JPanel();
 		
+		JPopupMenu.setDefaultLightWeightPopupEnabled(false);
 		JMenuBar menuBar = new JMenuBar();
 		
 		ImageIcon imageIcon = new ImageIcon("res/fileMenu.png");
@@ -138,7 +141,7 @@ public class TestFrame extends JFrame{
 		paletteMenu.setVerticalTextPosition(SwingConstants.BOTTOM);
 		menuBar.add(paletteMenu);
 		
-		paletteMenu.add(createPaletteItem("Нет", "def", null));
+		paletteMenu.add(createPaletteItem("Чёрно-белое", "def", null));
 		paletteMenu.add(createPaletteItem("Hot Iron", "hotIron", new ImageIcon("res/hotIronIcon.png")));
 		paletteMenu.add(createPaletteItem("PET Color", "pet", new ImageIcon("res/petIcon.png")));
 		paletteMenu.add(createPaletteItem("Hot Metal Blue Color", "hotMetalBlue", 
@@ -176,6 +179,11 @@ public class TestFrame extends JFrame{
 	    range.setOrientation(JSlider.VERTICAL);
 		range.setEnabled(false);
 		setRange(-128, 127);
+		
+		changeImageSlider = new JSlider(JSlider.VERTICAL);
+		changeImageSlider.setMinimum(0);
+		changeImageSlider.setInverted(true);
+		changeImageSlider.setVisible(false);
 
 		this.setLayout(new GridBagLayout());
 		final Canvas canvas = new Canvas();
@@ -215,7 +223,7 @@ public class TestFrame extends JFrame{
 		
 		GridBagConstraints imageConstraint = new GridBagConstraints();
 		imageConstraint.fill = GridBagConstraints.BOTH;
-		imageConstraint.ipadx = 100;
+		imageConstraint.ipadx = 200;
 		imageConstraint.gridx = 1;
 		imageConstraint.gridy = 0;
 		imageConstraint.gridheight = 5;
@@ -232,6 +240,9 @@ public class TestFrame extends JFrame{
 		constraint.gridx = 2;
 		constraint.gridy = 3;
 		constraint.gridheight = 3;
+		this.add(changeImageSlider, constraint);
+		
+		constraint.gridx = 3;
 		this.add(range, constraint);
 
 		setListeners();
@@ -296,43 +307,77 @@ public class TestFrame extends JFrame{
 				if(isMultipleSelection)
 				{
 					int notches = e.getWheelRotation();
+					int newVal = changeImageSlider.getValue();
 				       if (notches < 0) {
 				           //up
-				    	   Iterator<String> it = currentSeria.getImages().iterator();
-				    	   while(it.hasNext())
-				    	   {
-				    		   if(it.next().equals(currentFileName))
-				    		   {
-				    			   if(it.hasNext())
-				    			   {
-				    				   showImage(it.next());
-				    			   }
-				    			   break;
-				    		   }
-				    	   }
+				    	   //changeImageUp();
+				    	   newVal = (newVal == changeImageSlider.getMaximum()) ? newVal 
+				    			   : newVal + 1;				    	   
 				       } else {
 				          //down
-				    	   List<String> reverse = new ArrayList<String>(currentSeria.getImages());
-				    	   Collections.reverse(reverse);
-				    	   Iterator<String> it = reverse.iterator();
-				    	   while(it.hasNext())
-				    	   {
-				    		   if(it.next().equals(currentFileName))
-				    		   {
-				    			   if(it.hasNext())
-				    			   {
-				    				   showImage(it.next());
-				    			   }
-				    			   break;
-				    		   }
-				    	   }
+				    	   newVal = (newVal == changeImageSlider.getMinimum()) ? newVal 
+				    			   : newVal - 1;
 				       }
+				       changeImageSlider.setValue(newVal);
 				}
 			}
 			
 		});
+		
+		changeImageSlider.addChangeListener(new ChangeListener() {
+			private int currentValue = 0;
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				if(currentFileName == null)
+				{
+					return;
+				}
+				if(currentValue > changeImageSlider.getValue())
+				{
+					changeImageDown();
+				}
+				else if(currentValue < changeImageSlider.getValue())
+				{
+					changeImageUp();
+				}
+				currentValue = changeImageSlider.getValue();
+			}
+		});
 	}
 	
+	private void changeImageUp()
+	{
+		Iterator<String> it = currentSeria.getImages().iterator();
+ 	   while(it.hasNext())
+ 	   {
+ 		   if(it.next().equals(currentFileName))
+ 		   {
+ 			   if(it.hasNext())
+ 			   {
+ 				   showImage(it.next());
+ 			   }
+ 			   break;
+ 		   }
+ 	   }
+	}
+	
+	private void changeImageDown()
+	{
+		List<String> reverse = new ArrayList<String>(currentSeria.getImages());
+ 	   Collections.reverse(reverse);
+ 	   Iterator<String> it = reverse.iterator();
+ 	   while(it.hasNext())
+ 	   {
+ 		   if(it.next().equals(currentFileName))
+ 		   {
+ 			   if(it.hasNext())
+ 			   {
+ 				   showImage(it.next());
+ 			   }
+ 			   break;
+ 		   }
+ 	   }
+	}
 
 	private void setRange(int from, int to) {
 		range.setMinimum(from);
@@ -358,15 +403,15 @@ public class TestFrame extends JFrame{
 		MainRender.setImageBuffer(dicomImage.getImageBuffer());
 		MainRender.setWidth(width);
 		MainRender.setHeight(height);
+		
+		setRange(from, to);
 		MainRender.setFrom(from);
 		MainRender.setTo(to);
-
-		setRange(from, to);
 
 		if (dicomImage.isColor()) {
 			MainRender.notUsePalette();
 		}
-		range.setEnabled(true);
+		this.setTitle(fileName);
 	}
 
 	/**
@@ -414,8 +459,13 @@ public class TestFrame extends JFrame{
 			public void mouseClicked(MouseEvent e) {
 				currentSeria = series.get(seriaName);
 				showImage(series.get(seriaName).getImages().get(0));
-				//clearLabelsBorder();
-				//imagelabel.setBorder(border);
+//				setRange(dcmImg.getFrom(), dcmImg.getTo());
+//				MainRender.setFrom(dcmImg.getFrom());
+//				MainRender.setTo(dcmImg.getTo());
+				changeImageSlider.setMaximum(currentSeria.getImages().size());
+				changeImageSlider.setVisible(true);
+				changeImageSlider.setValue(0);
+				range.setEnabled(true);
 			}
 		});
 
@@ -440,6 +490,7 @@ public class TestFrame extends JFrame{
 	private void openFileActions()
 	{
 		try {
+			isMultipleSelection = false;
 			int returnVal = fileChooser.showOpenDialog(TestFrame.this);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
 				File[] files = fileChooser.getSelectedFiles();
@@ -462,7 +513,7 @@ public class TestFrame extends JFrame{
 						fileName = f.getAbsolutePath();
 						long start = System.currentTimeMillis();
 						DicomImage image = readImageFromFile(fileName);
-						System.out.println("read from file: " +
+						System.out.println(
 								 (System.currentTimeMillis() - start));
 						start = System.currentTimeMillis();
 						if(!series.containsKey(image.getSeriaId()))
@@ -494,14 +545,11 @@ public class TestFrame extends JFrame{
 						}
 						stuies.put(study.getId(), study);
 						
-						 System.out.println("add to seria: " +
-						 (System.currentTimeMillis() - start));
 					}
 
 					long start = System.currentTimeMillis();
 					
-					 System.out.println("fill studies " +
-					 (System.currentTimeMillis() - start));
+					 
 					
 					GridLayout gd = new GridLayout(stuies.size(), 1);
 					gd.setVgap(10);
@@ -512,14 +560,15 @@ public class TestFrame extends JFrame{
 					{
 						miniPanel.add(createStudyPart(s));
 					}
-					System.out.println("create studis part " +
-							 (System.currentTimeMillis() - start));
 					
 					miniaturesPane.setViewportView(miniPanel);
+					
 				} else {
 					fileName = files[0].getAbsolutePath();
 					readImageFromFile(fileName);
 					showImage(fileName);
+					changeImageSlider.setVisible(false);
+					miniaturesPane.setViewportView(null);
 				}
 			}
 		} finally {
