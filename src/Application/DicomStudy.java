@@ -6,6 +6,7 @@ import java.util.List;
 public class DicomStudy {
 	
 	private String id;
+	private String date;
 	private List<DicomSeria> series = new ArrayList<DicomSeria>();
 	private String description;
 	
@@ -40,5 +41,13 @@ public class DicomStudy {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public String getDate() {
+		return date;
+	}
+
+	public void setDate(String date) {
+		this.date = date;
 	}
 }

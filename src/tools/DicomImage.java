@@ -15,6 +15,7 @@ public class DicomImage {
 	private String seriaId;
 	private String studyDescription;
 	private String seriaDescription;
+	private String studyDate;
 	
 	
 	public Integer getWidth() {
@@ -82,5 +83,11 @@ public class DicomImage {
 	}
 	public void setSeriaDescription(String seriaDescription) {
 		this.seriaDescription = seriaDescription;
+	}
+	public String getStudyDate() {
+		return studyDate;
+	}
+	public void setStudyDate(String studyDate) {
+		this.studyDate = studyDate;
 	}
 }

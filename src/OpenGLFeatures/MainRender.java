@@ -61,7 +61,12 @@ public class MainRender{
 	private static int from;
 	private static int to;
 	private static boolean isUsePalette = false;
+	private static boolean isInvert = false;
+	private static boolean isRotate = false;
 	private static boolean isImageChanged = false;
+	
+	private static float centerX = 0.0f;
+	private static float centerY = 0.0f;
 	
 	private static float moveX = 0.0f;
 	private static float moveY = 0.0f;
@@ -70,11 +75,9 @@ public class MainRender{
 	private static float lastY;
 	private static boolean isFirstMove = true;
 	
+	private static int displayWidth;
+	private static int displayHeight;
 	
-	public MainRender(Object[] imageBuffer, int width, int height, Canvas canv)
-	{
-		tmpFunc(imageBuffer, width, height, canv);
-	}
 	
 	public static void main(String[] args){
 		int[][] palette  = PaletteLoader.getPalette(1);
@@ -91,12 +94,12 @@ public class MainRender{
 					| (b & 0x0ff);
 			newImage.setRGB(i, 0, newRgb);
 		}
-		try {
-			ImageIO.write(newImage, "PNG", new File("res/hotIron.PNG"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		try {
+//			//ImageIO.write(newImage, "PNG", new File("res/hotIron.PNG"));
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 	
 	public static void initDisplay(Canvas canv) {
@@ -107,6 +110,8 @@ public class MainRender{
 			Display.setParent(canv);
 			Display.setVSyncEnabled(true);
 			Display.create();
+			displayHeight = canv.getHeight();
+			displayWidth = canv.getWidth();
 		} catch (LWJGLException e) {
 			System.err.println("The display wasn't initialized correctly. :(");
 			Display.destroy();
@@ -129,7 +134,7 @@ public class MainRender{
 		
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		glOrtho(0, 800, 600, 0, 1, -1);
+		glOrtho(0, displayWidth, displayHeight, 0, 1, -1);
 		glMatrixMode(GL_MODELVIEW);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_TEXTURE_1D);
@@ -182,7 +187,7 @@ public class MainRender{
 		
 //		glMatrixMode(GL_PROJECTION);
 //		glLoadIdentity();
-//		glOrtho(0, width, height, 0, 1, -1);
+//		glOrtho(0, 1200, 600, 0, 1, -1);
 //		glMatrixMode(GL_MODELVIEW);
 //		glEnable(GL_TEXTURE_2D);
 //		glEnable(GL_TEXTURE_1D);
@@ -264,6 +269,16 @@ public class MainRender{
 		}
 	}
 	
+	private static void rotate() {
+		if (isRotate) {
+			glTranslatef(displayHeight / 2, displayHeight / 2, 0.0f);
+			glRotatef(90.f, 0.0f, 0.0f, 1.0f);
+			glTranslatef(-displayHeight / 2, -displayHeight / 2, 0.0f);
+
+			isRotate = false;
+		}
+	}
+	
 	public static void startRendering() {
 		while (!Display.isCloseRequested() && !closeRequested) {
 			checkInput();
@@ -273,7 +288,8 @@ public class MainRender{
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			glTranslatef(moveX, moveY, 0);
-
+			rotate();
+			
 			glUseProgram(shaderProgramInterval);
 			loadImage(imageBuffer, width, height);
 			if (isImageLoad) {
@@ -286,6 +302,8 @@ public class MainRender{
 				glUniform1i(glGetUniformLocation(shaderProgramInterval, "width"), width);
 				glUniform1i(glGetUniformLocation(shaderProgramInterval, "height"), height);
 				glUniform1i(glGetUniformLocation(shaderProgramInterval, "isUsePalette"), isUsePalette ? 1 : 0);
+				glUniform1i(glGetUniformLocation(shaderProgramInterval, "isInvert"), isInvert ? 1 : 0);
+				//glUniform1f(glGetUniformLocation(shaderProgramInterval, "Angle"), isRotate ? 0.9f : 0.f);
 				Util.checkGLError();
 
 				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
@@ -342,6 +360,8 @@ public class MainRender{
 	{
 		moveX = x;
 		moveY = y;
+		centerX += x;
+		centerY += y;
 	}
 	
 	
@@ -372,171 +392,19 @@ public class MainRender{
 	}
 	
 	
-	public static void tmpFunc(Object[] imageBuffer, int width, int height, Canvas canv)
-	{		
-		try {
-			Display.setParent(canv);
-	        Display.setVSyncEnabled(true);
-		Display.create();
-	} catch (LWJGLException e) {
-		System.err.println("The display wasn't initialized correctly. :(");
-		Display.destroy();
-		System.exit(1);
+	public static void setInvert(boolean isInvert) {
+		MainRender.isInvert = isInvert;
 	}
-	shaderProgramInterval = glCreateProgram();
-		
-	int fragmentShaderInterval = createShader("shaderWindow.frag", true);
-	int vertexShaderInterval = createShader("shaderWindow.vert", false);
-	
-	glAttachShader(shaderProgramInterval, vertexShaderInterval);
-	glAttachShader(shaderProgramInterval, fragmentShaderInterval);
-	
-	glLinkProgram(shaderProgramInterval);
-	glValidateProgram(shaderProgramInterval);
-	
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0, width, height, 0, 1, -1);
-	glMatrixMode(GL_MODELVIEW);
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_TEXTURE_1D);
-	glUseProgram(shaderProgramInterval);
-	genTexture(imageBuffer, width, height);
-	while (!Display.isCloseRequested() && !closeRequested) 
-	{
-		checkInput();
-		glClearColor(1.0f, 1.0f, 1.0f, 1f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glUseProgram(shaderProgramInterval);
-		Util.checkGLError();
-		//glUniform1f(glGetUniformLocation(shaderProgramInterval, "scale"), 1.0f);
-		glUniform1i(glGetUniformLocation(shaderProgramInterval, "from"), -128);
-		glUniform1i(glGetUniformLocation(shaderProgramInterval, "to"), 127);
-		Util.checkGLError();
-		glUniform1i(glGetUniformLocation(shaderProgramInterval, "width"), width);
-		glUniform1i(glGetUniformLocation(shaderProgramInterval, "height"), height);
-		Util.checkGLError();
-		
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
-		GL11.glBindTexture(GL_TEXTURE_2D, imageTextureId);
-		
-		glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture2"), palettes[paletteId] - 1);
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + paletteId + 1);
-		glBindTexture(GL_TEXTURE_1D, palettes[paletteId]);
-		
-		//========================================================================
-			int scalingWidth = (int)(width * scale);
-			int scalingHeight = (int)(height * scale);
-			    
-		glBegin(GL_QUADS);
-			glTexCoord2d(0, 0);
-			glVertex2i(0, 0);
-		
-			glTexCoord2d(1, 0);
-			glVertex2i(scalingWidth, 0);
-		
-			glTexCoord2d(1, 1);
-			glVertex2i(scalingWidth, scalingHeight);
-		
-			glTexCoord2d(0, 1);
-			glVertex2i(0, scalingHeight);
-		glEnd();
-		
-		
-		
-		ByteBuffer bytes = BufferUtils.createByteBuffer(width * height * 4);
-	    //GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
-	    glGetTexImage(GL_TEXTURE_2D, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
-		//========================================================================
-	    glUseProgram(0);
-		Display.sync(60);
-		Display.update();
-		
-	}
-	GL11.glDeleteTextures(palettes[0]);
-	GL11.glDeleteTextures(palettes[1]);
-	GL11.glDeleteTextures(palettes[2]);
-	GL11.glDeleteTextures(palettes[3]);
-	glDeleteProgram(shaderProgramInterval);
-	glDeleteShader(vertexShaderInterval);
-	glDeleteShader(fragmentShaderInterval);
 
-	Display.destroy();
-	System.exit(0);
+	public static void setRotate(boolean isRotate) {
+		MainRender.isRotate = isRotate;
 	}
-	
+
 	public static void destroy()
 	{
 		closeRequested = true;
 	}
 	
-	private static IntBuffer genTexture(Object[] imageBuffer, int width, int height) {
-		
-		IntBuffer texture_object_handles = BufferUtils.createIntBuffer(5);
-		glGenTextures(texture_object_handles);
-		try{
-		for (int i = 0; i < 5; i++) 
-		{
-			if(i == 0)
-			{
-				glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture1"), i);
-				GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
-				imageTextureId = texture_object_handles.get(i);
-				glBindTexture(GL_TEXTURE_2D, imageTextureId);
-				Util.checkGLError();
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				Util.checkGLError();
-				ByteBuffer buffer = BufferUtils.createByteBuffer(imageBuffer.length);
-				for(Object o : imageBuffer)
-				{
-					byte by = (byte)o;
-					buffer.put((by));
-				}
-				buffer.flip();
-				Util.checkGLError();
-				glTexImage2D(GL_TEXTURE_2D, 0, GL30.GL_R32I, width, height, 0, GL30.GL_RED_INTEGER, GL_BYTE, buffer);
-			}
-			else
-			{
-				GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
-				ByteBuffer buf = null;
-				PNGDecoder decoder = null;
-				InputStream in = null;
-				try {
-					in = new FileInputStream("res/" + getPaletteTexture(i) + ".PNG");
-				   decoder = new PNGDecoder(in);
-				 
-				   width = decoder.getWidth();
-				   height = decoder.getHeight();
-				 
-				   buf = BufferUtils.createByteBuffer(4 * width * height);
-				   decoder.decode(buf, width*4, PNGDecoder.TextureFormat.RGBA);
-				   buf.flip();
-				}
-				catch(Exception e)
-				{}
-				finally
-				{
-					in.close();
-				}
-				palettes[i - 1] = texture_object_handles.get(i);
-
-				glBindTexture(GL_TEXTURE_1D, palettes[i - 1]);
-				Util.checkGLError();
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				Util.checkGLError();
-				
-	//			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, decoder.getWidth(), 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-			}
-			Util.checkGLError();
-		}
-		}
-		catch(Exception e)
-		{
-		}
-		return texture_object_handles;
-	}
 	
 	private static String getPaletteTexture(int paletteType)
 	{

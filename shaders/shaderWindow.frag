@@ -5,6 +5,7 @@ uniform int to;
 uniform int width;
 uniform int height;
 uniform int isUsePalette;
+uniform int isInvert;
 
 void main() {
 	 vec4 texColor;
@@ -23,6 +24,10 @@ void main() {
 	 	{
 	 		resCol = float(col - from)/float(to - from);
 	 	}
+	 	if(isInvert == 1)
+	 	{
+	 		resCol = 1 - resCol;
+	 	}
 	 	vec4 tmp;
 	 	if(isUsePalette == 1)
 	 	{
@@ -32,6 +37,7 @@ void main() {
 	 	{
 	 		tmp = resCol;
 	 	}
+	 	
 	 	texColor.r = tmp.r;//
 	 	texColor.g = tmp.g;//resCol;//255.0;
 	 	texColor.b = tmp.b;//resCol;//255.0;

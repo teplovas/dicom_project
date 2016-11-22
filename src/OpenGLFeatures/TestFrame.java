@@ -43,9 +43,12 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -55,6 +58,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
@@ -70,6 +74,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import Application.*;
 import tools.DicomImage;
 import tools.ImageHelper;
+
+import de.javasoft.plaf.synthetica.SyntheticaAluOxideLookAndFeel;
 
 public class TestFrame extends JFrame{
 
@@ -107,6 +113,8 @@ public class TestFrame extends JFrame{
 		fileMenu.setHorizontalTextPosition(SwingConstants.CENTER);
 		fileMenu.setVerticalTextPosition(SwingConstants.BOTTOM);
 		menuBar.add(fileMenu);
+		
+		menuBar.add( Box.createHorizontalStrut( 10 ) );
 		
 		imageIcon = new ImageIcon("res/openIcon.png");
 		JMenuItem openFileItem = new JMenuItem("Открыть", imageIcon);
@@ -148,25 +156,63 @@ public class TestFrame extends JFrame{
 				new ImageIcon("res/hotMetalBlueIcon.png")));
 		paletteMenu.add(createPaletteItem("PET 20 Step Color", "pet20", new ImageIcon("res/pet20Icon.png")));
 		
-		imageIcon = new ImageIcon("res/multIcon.png");
-		JMenu multipleSelection = new JMenu("");
-		multipleSelection.setIcon(imageIcon);
-		multipleSelection.setToolTipText("Серия кадров");
-		multipleSelection.setHorizontalTextPosition(SwingConstants.CENTER);
-		multipleSelection.setVerticalTextPosition(SwingConstants.BOTTOM);
-		multipleSelection.addMenuListener(new MenuListener() {
-	        @Override
-	        public void menuSelected(MenuEvent e) {
-	            isMultipleSelection = true;
-	        }
-	        @Override
-	        public void menuDeselected(MenuEvent e) {
-	        }
-	        @Override
-	        public void menuCanceled(MenuEvent e) {
-	        }
-	    });
-		menuBar.add(multipleSelection);
+		imageIcon = new ImageIcon("res/scrollIcon.png");
+		JMenu scrollMenu = new JMenu("");
+		
+		JCheckBoxMenuItem multSelectMenuItem = new JCheckBoxMenuItem("Серия кадров");
+
+	    ActionListener aListener = new ActionListener() {
+	      public void actionPerformed(ActionEvent event) {
+	    	  AbstractButton aButton = (AbstractButton) event.getSource();
+	          isMultipleSelection = aButton.getModel().isSelected();
+	      }
+	    };
+	    multSelectMenuItem.addActionListener(aListener);
+		scrollMenu.setIcon(imageIcon);
+		scrollMenu.add(multSelectMenuItem);
+		menuBar.add(scrollMenu);
+		
+		JMenu invertMenu = new JMenu("");
+		invertMenu.setToolTipText("Инвертировать цвета");
+		invertMenu.addMenuListener(new MenuListener() {
+			private boolean isSelected = false;
+			@Override
+			public void menuSelected(MenuEvent e) {
+				isSelected = !isSelected;
+				MainRender.setInvert(isSelected);
+			}
+
+			@Override
+			public void menuCanceled(MenuEvent arg0) {
+			}
+
+			@Override
+			public void menuDeselected(MenuEvent arg0) {
+			}
+		});
+		imageIcon = new ImageIcon("res/invertIcon.png");
+		invertMenu.setIcon(imageIcon);
+		menuBar.add(invertMenu);
+		
+		JMenu rotateMenu = new JMenu("");
+		rotateMenu.setToolTipText("Перевернуть");
+		rotateMenu.addMenuListener(new MenuListener() {
+			@Override
+			public void menuSelected(MenuEvent e) {
+				MainRender.setRotate(true);
+			}
+
+			@Override
+			public void menuCanceled(MenuEvent arg0) {
+			}
+
+			@Override
+			public void menuDeselected(MenuEvent arg0) {
+			}
+		});
+		imageIcon = new ImageIcon("res/rotateIcon.png");
+		rotateMenu.setIcon(imageIcon);
+		menuBar.add(rotateMenu);
 		
 	    this.setJMenuBar(menuBar);
 		
@@ -187,7 +233,7 @@ public class TestFrame extends JFrame{
 
 		this.setLayout(new GridBagLayout());
 		final Canvas canvas = new Canvas();
-		canvas.setPreferredSize(new Dimension(1000, 800));
+		canvas.setPreferredSize(new Dimension(800, 800));
 
 		canvas.addComponentListener(new ComponentAdapter() {
 			@Override
@@ -310,7 +356,6 @@ public class TestFrame extends JFrame{
 					int newVal = changeImageSlider.getValue();
 				       if (notches < 0) {
 				           //up
-				    	   //changeImageUp();
 				    	   newVal = (newVal == changeImageSlider.getMaximum()) ? newVal 
 				    			   : newVal + 1;				    	   
 				       } else {
@@ -328,7 +373,7 @@ public class TestFrame extends JFrame{
 			private int currentValue = 0;
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				if(currentFileName == null)
+				if(currentFileName == null || currentSeria == null)
 				{
 					return;
 				}
@@ -354,7 +399,7 @@ public class TestFrame extends JFrame{
  		   {
  			   if(it.hasNext())
  			   {
- 				   showImage(it.next());
+ 				   showImage(it.next(), false);
  			   }
  			   break;
  		   }
@@ -372,7 +417,7 @@ public class TestFrame extends JFrame{
  		   {
  			   if(it.hasNext())
  			   {
- 				   showImage(it.next());
+ 				   showImage(it.next(), false);
  			   }
  			   break;
  		   }
@@ -391,7 +436,7 @@ public class TestFrame extends JFrame{
 	 * 
 	 * @param fileName
 	 */
-	private void showImage(String fileName) {
+	private void showImage(String fileName, boolean isChangeRange) {
 		this.currentFileName = fileName;
 		DicomImage dicomImage = dicomImages.get(fileName);
 
@@ -404,14 +449,17 @@ public class TestFrame extends JFrame{
 		MainRender.setWidth(width);
 		MainRender.setHeight(height);
 		
-		setRange(from, to);
-		MainRender.setFrom(from);
-		MainRender.setTo(to);
+		if(isChangeRange)
+		{
+			setRange(from, to);
+			MainRender.setFrom(from);
+			MainRender.setTo(to);
+		}
 
 		if (dicomImage.isColor()) {
 			MainRender.notUsePalette();
 		}
-		this.setTitle(fileName);
+		this.setTitle("DICOM(" + fileName + ")");
 	}
 
 	/**
@@ -458,7 +506,7 @@ public class TestFrame extends JFrame{
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				currentSeria = series.get(seriaName);
-				showImage(series.get(seriaName).getImages().get(0));
+				showImage(series.get(seriaName).getImages().get(0), true);
 //				setRange(dcmImg.getFrom(), dcmImg.getTo());
 //				MainRender.setFrom(dcmImg.getFrom());
 //				MainRender.setTo(dcmImg.getTo());
@@ -470,14 +518,6 @@ public class TestFrame extends JFrame{
 		});
 
 		return imagelabel;
-	}
-	
-	private void chooseImageAction(String fileName)
-	{
-		JLabel label = labels.get(fileName);
-		showImage(fileName);
-		clearLabelsBorder();
-		label.setBorder(border);
 	}
 
 	private void clearLabelsBorder() {
@@ -534,6 +574,7 @@ public class TestFrame extends JFrame{
 						{
 							study = new DicomStudy(image.getStudyId());
 							study.setDescription(image.getStudyDescription());
+							study.setDate(image.getStudyDate());
 						}
 						else
 						{
@@ -566,7 +607,8 @@ public class TestFrame extends JFrame{
 				} else {
 					fileName = files[0].getAbsolutePath();
 					readImageFromFile(fileName);
-					showImage(fileName);
+					showImage(fileName, true);
+					range.setEnabled(true);
 					changeImageSlider.setVisible(false);
 					miniaturesPane.setViewportView(null);
 				}
@@ -585,7 +627,9 @@ public class TestFrame extends JFrame{
 		studyPanel.setLayout(gd);
 		studyPanel.setFocusable(true);
 		
-		Border border = BorderFactory.createTitledBorder(study.getDescription());
+		String desc = study.getDescription() != null ? study.getDescription()
+				: makeDateFromString(study.getDate());
+		Border border = BorderFactory.createTitledBorder(desc);
 		studyPanel.setBorder(border);
 		
 		for(DicomSeria seria : study.getSeries())
@@ -593,17 +637,29 @@ public class TestFrame extends JFrame{
 			JLabel label = createMiniature(seria.getMiniature(), seria.getId(), seria.getImages().size());
 			border = BorderFactory.createTitledBorder(seria.getDescription());
 			label.setBorder(border);
+			label.createToolTip();
 			studyPanel.add(label);
 		}
 		
 		return studyPanel;
 	}
 	
+	private String makeDateFromString(String date)
+	{
+		if(date == null)
+			return null;
+		StringBuilder res = new StringBuilder(date.substring(0, 4));
+		res.append("-");
+		res.append(date.substring(4, 6));
+		res.append("-");
+		res.append(date.substring(6, 8));
+		return res.toString();
+	}
+	
 	
 	public static void main(String[] args) {
 		try {
-		      UIManager
-		          .setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			UIManager.setLookAndFeel(new SyntheticaAluOxideLookAndFeel());
 		    } catch (Exception ex) {
 		      System.err.println("Error loading L&F: " + ex);
 		    }
