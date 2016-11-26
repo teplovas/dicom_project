@@ -13,6 +13,7 @@ import org.lwjgl.opengl.Util;
 import org.lwjgl.util.glu.GLU;
 
 import java.awt.Canvas;
+import java.awt.Font;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,6 +31,9 @@ import javax.imageio.ImageIO;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
+
+import org.newdawn.slick.Color;
+import org.newdawn.slick.TrueTypeFont;
 import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
 
@@ -40,6 +44,8 @@ import tools.PaletteLoader;
  * @author teplova.s 
  * */
 public class MainRender{
+	
+	private static TrueTypeFont font;
 	
 	static int shaderProgramInterval;
 	
@@ -78,6 +84,8 @@ public class MainRender{
 	private static int displayWidth;
 	private static int displayHeight;
 	
+	private static int scaleWidth;
+	private static int scaleHeight;	
 	
 	public static void main(String[] args){
 		int[][] palette  = PaletteLoader.getPalette(1);
@@ -108,8 +116,9 @@ public class MainRender{
 		System.setProperty("org.lwjgl.librarypath", JGLLib.getAbsolutePath());
 		try {
 			Display.setParent(canv);
-			Display.setVSyncEnabled(true);
+			
 			Display.create();
+			Display.setVSyncEnabled(true);
 			displayHeight = canv.getHeight();
 			displayWidth = canv.getWidth();
 		} catch (LWJGLException e) {
@@ -117,6 +126,28 @@ public class MainRender{
 			Display.destroy();
 			System.exit(1);
 		}
+		
+//		GL11.glEnable(GL11.GL_TEXTURE_2D);
+//		GL11.glShadeModel(GL11.GL_SMOOTH);        
+//		GL11.glDisable(GL11.GL_DEPTH_TEST);
+//		GL11.glDisable(GL11.GL_LIGHTING);                    
+// 
+//		GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);                
+//        GL11.glClearDepth(1);                                       
+// 
+//        GL11.glEnable(GL11.GL_BLEND);
+//        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+// 
+//        GL11.glViewport(0,0,width,height);
+//		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+// 
+//		GL11.glMatrixMode(GL11.GL_PROJECTION);
+//		GL11.glLoadIdentity();
+//		GL11.glOrtho(0, width, height, 0, 1, -1);
+//		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+//		
+//		Font awtFont = new Font("Times New Roman", Font.BOLD, 24);
+//		font = new TrueTypeFont(awtFont, true);
 	}
 	
 	public static void loadShadersAndPallettes()
@@ -271,20 +302,41 @@ public class MainRender{
 	
 	private static void rotate() {
 		if (isRotate) {
-			glTranslatef(displayHeight / 2, displayHeight / 2, 0.0f);
+			
+			int scalingWidth = (int) (scaleHeight * scale);
+			int shiftW = (displayHeight - scalingWidth) / 2;
+			
+			glTranslatef(displayHeight / 2 - shiftW, displayHeight / 2 - shiftW, 0.0f);
 			glRotatef(90.f, 0.0f, 0.0f, 1.0f);
-			glTranslatef(-displayHeight / 2, -displayHeight / 2, 0.0f);
+			glTranslatef(-displayHeight / 2 + shiftW, -displayHeight / 2 + shiftW, 0.0f);
 
 			isRotate = false;
 		}
 	}
 	
 	public static void startRendering() {
+		
+//		while (true) {
+//			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+//			Color.white.bind();
+//			 
+//			font.drawString(100, 50, "THE LIGHTWEIGHT JAVA GAMES LIBRARY", Color.yellow);
+// 
+//			Display.update();
+//			Display.sync(100);
+// 
+//			if (Display.isCloseRequested()) {
+//				Display.destroy();
+//				System.exit(0);
+//			}
+//		}
+		
 		while (!Display.isCloseRequested() && !closeRequested) {
 			checkInput();
 			checkMousePressed();
 			checkMouseWheel();
-			glClearColor(0.92549f, 0.917647f, 0.917647f, 0.5f);
+			//glClearColor(0.92549f, 0.917647f, 0.917647f, 0.5f);
+			glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			glTranslatef(moveX, moveY, 0);
@@ -303,7 +355,6 @@ public class MainRender{
 				glUniform1i(glGetUniformLocation(shaderProgramInterval, "height"), height);
 				glUniform1i(glGetUniformLocation(shaderProgramInterval, "isUsePalette"), isUsePalette ? 1 : 0);
 				glUniform1i(glGetUniformLocation(shaderProgramInterval, "isInvert"), isInvert ? 1 : 0);
-				//glUniform1f(glGetUniformLocation(shaderProgramInterval, "Angle"), isRotate ? 0.9f : 0.f);
 				Util.checkGLError();
 
 				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
@@ -313,21 +364,24 @@ public class MainRender{
 				GL13.glActiveTexture(GL13.GL_TEXTURE0 + paletteId);
 				glBindTexture(GL_TEXTURE_1D, palettes[paletteId]);
 
-				int scalingWidth = (int) (width * scale);
-				int scalingHeight = (int) (height * scale);
+				int scalingWidth = (int) (scaleWidth * scale);
+				int scalingHeight = (int) (scaleHeight * scale);
+				
+				int shiftW = (displayWidth - scalingWidth) / 2;
+				int shiftH = (displayHeight - scalingHeight) / 2;
 
 				glBegin(GL_QUADS);
 				glTexCoord2d(0, 0);
-				glVertex2i(0, 0);
+				glVertex2i(shiftW, shiftH);
 
 				glTexCoord2d(1, 0);
-				glVertex2i(scalingWidth, 0);
+				glVertex2i(scalingWidth + shiftW, shiftH);
 
 				glTexCoord2d(1, 1);
-				glVertex2i(scalingWidth, scalingHeight);
+				glVertex2i(scalingWidth + shiftW, scalingHeight + shiftH);
 
 				glTexCoord2d(0, 1);
-				glVertex2i(0, scalingHeight);
+				glVertex2i(shiftW, scalingHeight + shiftH);
 				glEnd();
 
 				// ByteBuffer bytes = BufferUtils.createByteBuffer(width *
@@ -369,6 +423,34 @@ public class MainRender{
 	{
 		MainRender.imageBuffer = imageBuffer;
 		MainRender.isImageChanged = true;
+	}
+	
+	public static void setSize(int width, int height)
+	{
+		MainRender.width = width;
+		MainRender.height = height;
+		
+		boolean isWGreate = width > displayWidth;
+		boolean isHGreate = height > displayHeight;
+		
+		// соотношение сторон: во сколько ширина больше высоты
+		double ratio = (double)width / (double)height;
+		
+		if(isWGreate && isHGreate && width > height || isWGreate)
+		{
+			MainRender.scaleWidth = displayWidth;
+			MainRender.scaleHeight = (int)((float)displayWidth / ratio);
+			return;
+		}
+		else if(isWGreate && isHGreate && width < height || isHGreate)
+		{
+			MainRender.scaleHeight = displayHeight;
+			MainRender.scaleWidth = (int)((float)displayHeight * ratio);
+			return;
+		}
+				
+		MainRender.scaleHeight = height;
+		MainRender.scaleWidth = width;
 	}
 	
 	public static void setWidth(int width)

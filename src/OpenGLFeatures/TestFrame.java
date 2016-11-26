@@ -48,6 +48,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -82,7 +83,6 @@ public class TestFrame extends JFrame{
 	private static final long serialVersionUID = 3195487268099554955L;
 	private Map<String, DicomImage> dicomImages = new LinkedHashMap<String, DicomImage>();
 	private final AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
-	private final Border border = BorderFactory.createLineBorder(Color.blue, 1);
 	private Thread renderThread;
 	private RangeSlider range;
 	private JScrollPane miniaturesPane;
@@ -140,6 +140,7 @@ public class TestFrame extends JFrame{
 		});
 	    fileMenu.add(infoFileItem);
 	    
+	    //===================Palette================================
 	    imageIcon = new ImageIcon("res/paletteIcon.png");
 		JMenu paletteMenu = new JMenu("");
 		paletteMenu.setIcon(imageIcon);
@@ -156,6 +157,7 @@ public class TestFrame extends JFrame{
 				new ImageIcon("res/hotMetalBlueIcon.png")));
 		paletteMenu.add(createPaletteItem("PET 20 Step Color", "pet20", new ImageIcon("res/pet20Icon.png")));
 		
+		//===================Scroll================================
 		imageIcon = new ImageIcon("res/scrollIcon.png");
 		JMenu scrollMenu = new JMenu("");
 		
@@ -172,47 +174,56 @@ public class TestFrame extends JFrame{
 		scrollMenu.add(multSelectMenuItem);
 		menuBar.add(scrollMenu);
 		
-		JMenu invertMenu = new JMenu("");
+		//===================Invert================================
+		JButton invertMenu = new JButton("");
 		invertMenu.setToolTipText("Инвертировать цвета");
-		invertMenu.addMenuListener(new MenuListener() {
+		invertMenu.addActionListener(new ActionListener() {
 			private boolean isSelected = false;
-			@Override
-			public void menuSelected(MenuEvent e) {
+			public void actionPerformed(ActionEvent e) {
 				isSelected = !isSelected;
 				MainRender.setInvert(isSelected);
-			}
-
-			@Override
-			public void menuCanceled(MenuEvent arg0) {
-			}
-
-			@Override
-			public void menuDeselected(MenuEvent arg0) {
 			}
 		});
 		imageIcon = new ImageIcon("res/invertIcon.png");
 		invertMenu.setIcon(imageIcon);
 		menuBar.add(invertMenu);
 		
-		JMenu rotateMenu = new JMenu("");
-		rotateMenu.setToolTipText("Перевернуть");
-		rotateMenu.addMenuListener(new MenuListener() {
-			@Override
-			public void menuSelected(MenuEvent e) {
+		//===================Rotate================================
+		JButton rotateMenu = new JButton("");
+		rotateMenu.setToolTipText("Повернуть на 90°");
+		rotateMenu.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
 				MainRender.setRotate(true);
-			}
-
-			@Override
-			public void menuCanceled(MenuEvent arg0) {
-			}
-
-			@Override
-			public void menuDeselected(MenuEvent arg0) {
 			}
 		});
 		imageIcon = new ImageIcon("res/rotateIcon.png");
 		rotateMenu.setIcon(imageIcon);
 		menuBar.add(rotateMenu);
+		
+		//===================Zoom In================================
+		JButton zoomIn = new JButton("");
+		zoomIn.setToolTipText("Увеличить изображение");
+		zoomIn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MainRender.changeScale(.1f);
+			}
+		});
+		imageIcon = new ImageIcon("res/zoomInIcon.png");
+		zoomIn.setIcon(imageIcon);
+		menuBar.add(zoomIn);
+		
+		//================Zoom Out==================================
+		JButton zoomOut = new JButton("");
+		zoomOut.setToolTipText("Уменьшить изображение");
+		zoomOut.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MainRender.changeScale(-.1f);
+			}
+		});
+		imageIcon = new ImageIcon("res/zoomOutIcon.png");
+		zoomOut.setIcon(imageIcon);
+		menuBar.add(zoomOut);
+		//===========================================================
 		
 	    this.setJMenuBar(menuBar);
 		
@@ -446,8 +457,9 @@ public class TestFrame extends JFrame{
 		int to = dicomImage.getTo();
 
 		MainRender.setImageBuffer(dicomImage.getImageBuffer());
-		MainRender.setWidth(width);
-		MainRender.setHeight(height);
+//		MainRender.setWidth(width);
+//		MainRender.setHeight(height);
+		MainRender.setSize(width, height);
 		
 		if(isChangeRange)
 		{
