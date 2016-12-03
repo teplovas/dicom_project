@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.Util;
+import org.lwjgl.util.Point;
 import org.lwjgl.util.glu.GLU;
 
 import java.awt.Canvas;
@@ -26,6 +27,8 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -46,6 +49,7 @@ import tools.PaletteLoader;
 public class MainRender{
 	
 	private static TrueTypeFont font;
+	private static TrueTypeFont font2;
 	
 	static int shaderProgramInterval;
 	
@@ -70,6 +74,9 @@ public class MainRender{
 	private static boolean isInvert = false;
 	private static boolean isRotate = false;
 	private static boolean isImageChanged = false;
+	private static boolean isMesurements = false;
+	
+	private static List<Mesure> mesurements = new ArrayList<Mesure>();
 	
 	private static float centerX = 0.0f;
 	private static float centerY = 0.0f;
@@ -85,7 +92,10 @@ public class MainRender{
 	private static int displayHeight;
 	
 	private static int scaleWidth;
-	private static int scaleHeight;	
+	private static int scaleHeight;
+	
+	private static int numberOfImages;
+	private static int currentImageNumber;
 	
 	public static void main(String[] args){
 		int[][] palette  = PaletteLoader.getPalette(1);
@@ -146,8 +156,11 @@ public class MainRender{
 //		GL11.glOrtho(0, width, height, 0, 1, -1);
 //		GL11.glMatrixMode(GL11.GL_MODELVIEW);
 //		
-//		Font awtFont = new Font("Times New Roman", Font.BOLD, 24);
-//		font = new TrueTypeFont(awtFont, true);
+		Font awtFont = new Font("Times New Roman", Font.PLAIN, 24);
+		font = new TrueTypeFont(awtFont, true);
+		
+		awtFont = new Font("Times New Roman", Font.PLAIN, 14);
+		font2 = new TrueTypeFont(awtFont, true);
 	}
 	
 	public static void loadShadersAndPallettes()
@@ -314,26 +327,36 @@ public class MainRender{
 		}
 	}
 	
+	
+	private static void renderString(String text, float x, float y, Color color, TrueTypeFont font)
+	{
+		
+		GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        
+        //Color.white.bind();
+        GL11.glDrawBuffer(GL11.GL_BACK);
+		font.drawString(x, y, text, color);
+		GL11.glDisable(GL11.GL_BLEND);
+	}
+	
+	
+	private static void printImageInfo()
+	{
+		renderString(currentImageNumber + "/" + numberOfImages, 20, 30, Color.yellow, font);
+		renderString("X: " + Mouse.getX() + " Y: " + Mouse.getY(), 20, displayHeight - 30, Color.yellow, font);
+	}
+	
 	public static void startRendering() {
-		
-//		while (true) {
-//			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-//			Color.white.bind();
-//			 
-//			font.drawString(100, 50, "THE LIGHTWEIGHT JAVA GAMES LIBRARY", Color.yellow);
-// 
-//			Display.update();
-//			Display.sync(100);
-// 
-//			if (Display.isCloseRequested()) {
-//				Display.destroy();
-//				System.exit(0);
-//			}
-//		}
-		
+		boolean isDrawLine = false;
+		int curX = 0;
+		int curY = 0;
 		while (!Display.isCloseRequested() && !closeRequested) {
 			checkInput();
-			checkMousePressed();
+			if(!isMesurements)
+			{
+				checkMousePressed();
+			}
 			checkMouseWheel();
 			//glClearColor(0.92549f, 0.917647f, 0.917647f, 0.5f);
 			glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
@@ -369,7 +392,8 @@ public class MainRender{
 				
 				int shiftW = (displayWidth - scalingWidth) / 2;
 				int shiftH = (displayHeight - scalingHeight) / 2;
-
+				
+				glEnable(GL_TEXTURE_2D);
 				glBegin(GL_QUADS);
 				glTexCoord2d(0, 0);
 				glVertex2i(shiftW, shiftH);
@@ -383,7 +407,40 @@ public class MainRender{
 				glTexCoord2d(0, 1);
 				glVertex2i(shiftW, scalingHeight + shiftH);
 				glEnd();
+				
+				glUseProgram(0);
+				
+				for(Mesure m : mesurements)
+				{
+					mesureInfo(m);
+				}
+				
+				if(isMesurements)
+				{
+					if(Mouse.isButtonDown(0))
+					{
+						if(!isDrawLine)
+						{
+							curX = Mouse.getX();
+							curY = Mouse.getY();
+						}
+						if(curX != Mouse.getX() && curY != Mouse.getY())
+						drawLine(curX, curY, Mouse.getX(), displayHeight - Mouse.getY(), true);
+						isDrawLine = true;
+					}
+					else
+					{
+						if(isDrawLine)
+						{
+							mesurements.add(new Mesure(new Point(curX, curY), new Point(Mouse.getX(), displayHeight - Mouse.getY())));
+						}
+						isDrawLine = false;
+					}
+				}
 
+				//glUseProgram(0);
+				
+				printImageInfo();
 				// ByteBuffer bytes = BufferUtils.createByteBuffer(width *
 				// height * 4);
 				// //GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA,
@@ -418,6 +475,46 @@ public class MainRender{
 		centerY += y;
 	}
 	
+	private static void drawLine(int fromX, int fromY, int toX, int toY, boolean isb)
+	{
+		glLineWidth(2);
+		glDisable(GL_TEXTURE_2D);
+		glBegin(GL_LINES);
+			glColor3f(1, 0, 0);
+			
+			glVertex2f(fromX, fromY);
+			glVertex2f(toX, toY);
+		glEnd();
+		glEnable(GL_TEXTURE_2D);
+		if(isb)
+			System.out.println(toX + " " + toY);
+	}
+	
+	private static void mesureInfo(Mesure mesure)
+	{
+		drawLine(mesure.getPointFrom().getX(), mesure.getPointFrom().getY(), 
+				mesure.getPointTo().getX(), mesure.getPointTo().getY(), false);
+		int x = mesure.getPointTo().getX();
+		int y = mesure.getPointTo().getY();
+		int w = 35;
+		int h = 20;
+		
+		glBegin(GL_QUADS);
+			glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
+			glVertex2i(x, y);
+	
+			glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
+			glVertex2i(x + w, y);
+	
+			glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
+			glVertex2i(x + w, y + h);
+	
+			glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
+			glVertex2i(x, y + h);
+		glEnd();
+		
+		renderString(Integer.valueOf(mesure.distance.intValue()).toString(), mesure.pointTo.getX(), mesure.pointTo.getY(), Color.green, font2);
+	}
 	
 	public static void setImageBuffer(Object[] imageBuffer)
 	{
@@ -433,7 +530,7 @@ public class MainRender{
 		boolean isWGreate = width > displayWidth;
 		boolean isHGreate = height > displayHeight;
 		
-		// соотношение сторон: во сколько ширина больше высоты
+		// Г±Г®Г®ГІГ­Г®ГёГҐГ­ГЁГҐ Г±ГІГ®Г°Г®Г­: ГўГ® Г±ГЄГ®Г«ГјГЄГ® ГёГЁГ°ГЁГ­Г  ГЎГ®Г«ГјГёГҐ ГўГ»Г±Г®ГІГ»
 		double ratio = (double)width / (double)height;
 		
 		if(isWGreate && isHGreate && width > height || isWGreate)
@@ -452,7 +549,19 @@ public class MainRender{
 		MainRender.scaleHeight = height;
 		MainRender.scaleWidth = width;
 	}
-	
+
+	public static void setNumberOfImages(int numberOfImages) {
+		MainRender.numberOfImages = numberOfImages;
+	}
+
+	public static void setCurrentImageNumber(int currentImageNumber) {
+		MainRender.currentImageNumber = currentImageNumber;
+	}
+
+	public static void setMesurements(boolean isMesurements) {
+		MainRender.isMesurements = isMesurements;
+	}
+
 	public static void setWidth(int width)
 	{
 		MainRender.width = width;
@@ -556,9 +665,9 @@ public class MainRender{
     }
 
 	/**
-	 * Создание шейдера
-	 * @param shaderName - название
-	 * @param isFragment - true, если фрагментный шейдер
+	 * Г‘Г®Г§Г¤Г Г­ГЁГҐ ГёГҐГ©Г¤ГҐГ°Г 
+	 * @param shaderName - Г­Г Г§ГўГ Г­ГЁГҐ
+	 * @param isFragment - true, ГҐГ±Г«ГЁ ГґГ°Г ГЈГ¬ГҐГ­ГІГ­Г»Г© ГёГҐГ©Г¤ГҐГ°
 	 * @return
 	 */
 	private static int createShader(String shaderName, boolean isFragment)
@@ -574,8 +683,8 @@ public class MainRender{
 	}
 	
 	/**
-	 * Чтение шейдера из файла
-	 * @param filePath - путь к файлу
+	 * Г—ГІГҐГ­ГЁГҐ ГёГҐГ©Г¤ГҐГ°Г  ГЁГ§ ГґГ Г©Г«Г 
+	 * @param filePath - ГЇГіГІГј ГЄ ГґГ Г©Г«Гі
 	 * @return
 	 */
 	private static StringBuilder createShaderSource(String filePath)
@@ -663,6 +772,38 @@ public class MainRender{
 			System.err.println("Can't open file " + fileName);
 		}
 		return null;
+	}
+	
+	private static class Mesure
+	{
+		private Point pointFrom;
+		private Point pointTo;
+		private Double distance;
+		
+		public Mesure(Point from, Point to) {
+			pointFrom = from;
+			pointTo = to;
+			distance = Math.sqrt((pointFrom.getX() - pointTo.getX()) * (pointFrom.getX() - pointTo.getX())
+					+ (pointFrom.getY() - pointTo.getY()) * (pointFrom.getY() - pointTo.getY()));
+		}
+		public Point getPointFrom() {
+			return pointFrom;
+		}
+		public void setPointFrom(Point pointFrom) {
+			this.pointFrom = pointFrom;
+		}
+		public Point getPointTo() {
+			return pointTo;
+		}
+		public void setPointTo(Point pointTo) {
+			this.pointTo = pointTo;
+		}
+		public Double getDistance() {
+			return distance;
+		}
+		public void setDistance(Double distance) {
+			this.distance = distance;
+		}
 	}
 
 }

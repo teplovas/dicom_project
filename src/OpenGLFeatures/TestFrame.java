@@ -62,6 +62,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JToolBar;
+import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
@@ -71,6 +72,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.eclipse.swt.internal.win32.MEASUREITEMSTRUCT;
 
 import Application.*;
 import tools.DicomImage;
@@ -173,6 +176,34 @@ public class TestFrame extends JFrame{
 		scrollMenu.setIcon(imageIcon);
 		scrollMenu.add(multSelectMenuItem);
 		menuBar.add(scrollMenu);
+		
+		//===================Mesurements===================================
+		imageIcon = new ImageIcon("res/mesurementsIcon.png");
+		JMenu mesureMenu = new JMenu("");
+		
+		mesureMenu.addMenuListener(new MenuListener() {
+			boolean isPressed = false;
+	        @Override
+	        public void menuSelected(MenuEvent e) {
+	        	isPressed = !isPressed;
+				MainRender.setMesurements(isPressed);	        
+			}
+
+	        @Override
+	        public void menuDeselected(MenuEvent e) {
+	            System.out.println("menuDeselected");
+
+	        }
+
+	        @Override
+	        public void menuCanceled(MenuEvent e) {
+	            System.out.println("menuCanceled");
+
+	        }
+	    });
+		
+		mesureMenu.setIcon(imageIcon);
+		menuBar.add(mesureMenu);
 		
 		//===================Invert================================
 		JButton invertMenu = new JButton("");
@@ -285,6 +316,9 @@ public class TestFrame extends JFrame{
 		imageConstraint.gridy = 0;
 		imageConstraint.gridheight = 5;
 
+		GTransparentPanel trans = new GTransparentPanel();
+		//canvas.add
+		
 		//panel.setPreferredSize(new Dimension(800, 600));
 		panel.setMinimumSize(new Dimension(1000, 600));
 		//panel.setMaximumSize(new Dimension(800, 600));
@@ -404,12 +438,15 @@ public class TestFrame extends JFrame{
 	private void changeImageUp()
 	{
 		Iterator<String> it = currentSeria.getImages().iterator();
+		int imgNumber = 0;
  	   while(it.hasNext())
  	   {
+ 		   imgNumber++;
  		   if(it.next().equals(currentFileName))
  		   {
  			   if(it.hasNext())
  			   {
+ 				   MainRender.setCurrentImageNumber(imgNumber);
  				   showImage(it.next(), false);
  			   }
  			   break;
@@ -422,12 +459,15 @@ public class TestFrame extends JFrame{
 		List<String> reverse = new ArrayList<String>(currentSeria.getImages());
  	   Collections.reverse(reverse);
  	   Iterator<String> it = reverse.iterator();
+ 	   int imgNumber = dicomImages.size();
  	   while(it.hasNext())
  	   {
+ 		   imgNumber--;
  		   if(it.next().equals(currentFileName))
  		   {
  			   if(it.hasNext())
  			   {
+ 				   MainRender.setCurrentImageNumber(imgNumber);
  				   showImage(it.next(), false);
  			   }
  			   break;
@@ -623,7 +663,9 @@ public class TestFrame extends JFrame{
 					range.setEnabled(true);
 					changeImageSlider.setVisible(false);
 					miniaturesPane.setViewportView(null);
+					MainRender.setCurrentImageNumber(1);
 				}
+				MainRender.setNumberOfImages(files.length);
 			}
 		} finally {
 			TestFrame.this.setCursor(Cursor.getDefaultCursor());
@@ -666,6 +708,27 @@ public class TestFrame extends JFrame{
 		res.append("-");
 		res.append(date.substring(6, 8));
 		return res.toString();
+	}
+	
+	class GTransparentPanel extends JPanel {
+	    public GTransparentPanel() {
+	        this.setOpaque(false);
+	        this.addMouseListener(new MouseAdapter() 
+	        {
+	        	@Override
+	        	public void mousePressed(MouseEvent e) {
+	        		System.out.println("DLLLLLLLLLLLLLLL");
+	        	}
+			});
+	    }
+	    
+	    @Override
+	    public void paintComponent(Graphics g) {
+	        //rectangle originates at 10,10 and ends at 240,240
+	        g.drawRect(10, 10, 240, 240);
+	        //filled Rectangle with rounded corners.    
+	        g.fillRoundRect(50, 50, 100, 100, 80, 80);
+	    }
 	}
 	
 	
