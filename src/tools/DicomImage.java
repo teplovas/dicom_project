@@ -16,6 +16,7 @@ public class DicomImage {
 	private String studyDescription;
 	private String seriaDescription;
 	private String studyDate;
+	private Float pixelSpacing;
 	
 	
 	public Integer getWidth() {
@@ -89,5 +90,11 @@ public class DicomImage {
 	}
 	public void setStudyDate(String studyDate) {
 		this.studyDate = studyDate;
+	}
+	public Float getPixelSpacing() {
+		return pixelSpacing;
+	}
+	public void setPixelSpacing(Float pixelSpacing) {
+		this.pixelSpacing = pixelSpacing;
 	}
 }

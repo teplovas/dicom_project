@@ -155,6 +155,7 @@ public class ConvertTools {
 		DicomInputStream din = null;
 		Object[] data = null;
 		DicomImage dcmImg = new DicomImage();
+		Float pixelSpacing = null;
 		try{
 			//long start = System.currentTimeMillis();
 			din = new DicomInputStream(new File(fileName));
@@ -175,8 +176,10 @@ public class ConvertTools {
 			}
 			DicomElement r = dcmObj.get(Tag.Rows);
 			DicomElement c = dcmObj.get(Tag.Columns);
+			DicomElement ps = dcmObj.get(Tag.PixelSpacing);
 			rows = r.getInt(false);
 			cols = c.getInt(false);
+			pixelSpacing = ps != null ? ps.getFloat(false) : null;
 			
 			dcmImg.setSeriaId(dcmObj.getString(Tag.SeriesInstanceUID));
 			dcmImg.setStudyId(dcmObj.getString(Tag.StudyInstanceUID));
@@ -226,7 +229,8 @@ public class ConvertTools {
 				size++;
 			}
 			//System.out.print((System.currentTimeMillis() - start) + "\t");
-			System.out.print(fileName + "\t");
+			System.out.print("max: " + maxValue + "\t");
+			System.out.print("min: " + minValue + "\t");
 			dcmImg.setImageBuffer(data);
 			dcmImg.setFrom(minValue);
 			dcmImg.setTo(maxValue);
@@ -234,6 +238,7 @@ public class ConvertTools {
 			dcmImg.setWidth(cols);
 			dcmImg.setColor(isColored);
 			dcmImg.setTagsValues(listHeader(dcmObj));
+			dcmImg.setPixelSpacing(pixelSpacing);
 		}catch(Exception e)
 		{
 			System.out.println("ERROR: " + e.getMessage());
