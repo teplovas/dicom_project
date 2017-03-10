@@ -40,6 +40,7 @@ import static org.lwjgl.opengl.GL20.glUseProgram;
 import static org.lwjgl.opengl.GL20.glValidateProgram;
 
 import java.awt.Canvas;
+import java.awt.Font;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,7 +56,12 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.Util;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector3f;
+import org.newdawn.slick.Color;
+import org.newdawn.slick.TrueTypeFont;
 
 import net.sourceforge.fastpng.PNGDecoder;
 import tools.DicomImage;
@@ -63,7 +69,7 @@ import tools.DicomImage;
 public class RenderingLoop {	
 	static int shaderProgramInterval;
 	
-	private static int paletteId = 0;
+	private static int paletteId = -1;
 		
 	private static int[] palettes = new int[4];
 	private static boolean closeRequested = false;
@@ -101,6 +107,7 @@ public class RenderingLoop {
 	
 	private static Float pixelSpacing;
 	private static boolean isByte = false;
+	private static Boolean isZoom = null;
 	private static DicomImage image;
 	
 	public static void init(Canvas canvas) 
@@ -159,6 +166,14 @@ public class RenderingLoop {
 	public static void changeScale(float scale)
 	{
 		RenderingLoop.scale += scale;
+		if(scale < 0)
+		{
+			isZoom = false;
+		}
+		else
+		{
+			isZoom = true;
+		}
 	}
 	
 	private static void moveFrame(float x, float y)
@@ -212,6 +227,7 @@ public class RenderingLoop {
 		return 0;
 	}
 	
+	
 	public static void startRender()
 	{
 		while (!Display.isCloseRequested()) {
@@ -229,19 +245,22 @@ public class RenderingLoop {
 			Util.checkGLError();
 			//glTranslatef(moveX, moveY, 0);
 			//rotate();
-			//glUseProgram(ContextInitialization.getShaderProgramInterval());
+			glUseProgram(ContextInitialization.getShaderProgramInterval());
 			Util.checkGLError();
 			bindImage();
-			if (isImageLoad) {
+			if (isImageLoad) 
+			{
 				//Image
-				ImageRender.renderImage(from, to, isInvert, paletteId, scale);
-				//Mesurements
+				ImageRender.renderImage(from, to, isInvert, paletteId, isZoom, isRotate, moveX, moveY);
+				//Measurements
 				MesurementsRender.renderMesurements(scale, isMesurements);
 				//Additional info
 				AdditionalInfoRender.renderInfo(currentImageNumber, numberOfImages);
 			}
+			isZoom = null;
+			isRotate = false;
 			moveFrame(0.0f, 0.0f);
-			//glUseProgram(0);
+			glUseProgram(0);
 			Display.sync(60);
 			Display.update();
 			
@@ -257,6 +276,7 @@ public class RenderingLoop {
 		Display.destroy();
 		System.exit(0);
 	}
+	
 
 	public static void setScale(float scale) {
 		RenderingLoop.scale = scale;

@@ -7,6 +7,8 @@ uniform int height;
 uniform int isUsePalette;
 uniform int isInvert;
 
+//varying vec4 pos;
+
 void main() {
 	 vec4 texColor;
 	 	int col = texelFetch(texture1,ivec2(gl_TexCoord[0].s*width,gl_TexCoord[0].t*height), 0);//texture2D(texture1, gl_TexCoord[0].st).r;//

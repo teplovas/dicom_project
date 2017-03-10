@@ -106,7 +106,7 @@ public class MesurementsRender {
 	
 	private static void drawLine(int fromX, int fromY, int toX, int toY, boolean isb)
 	{
-		glLineWidth(2);
+		glLineWidth(1.5f);
 		glDisable(GL_TEXTURE_2D);
 		glBegin(GL_LINES);
 			glColor3f(1, 0, 0);
@@ -121,7 +121,6 @@ public class MesurementsRender {
 	
 	private static void renderString(String text, float x, float y, Color color, TrueTypeFont font)
 	{
-		
 		GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         

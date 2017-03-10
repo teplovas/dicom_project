@@ -46,6 +46,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.Util;
 
 import net.sourceforge.fastpng.PNGDecoder;
@@ -103,6 +104,8 @@ public class ContextInitialization {
 		
 		glAttachShader(shaderProgramInterval, vertexShaderInterval);
 		glAttachShader(shaderProgramInterval, fragmentShaderInterval);
+		
+		GL20.glBindAttribLocation(shaderProgramInterval, 0, "in_Position");
 		
 		glLinkProgram(shaderProgramInterval);
 		glValidateProgram(shaderProgramInterval);
