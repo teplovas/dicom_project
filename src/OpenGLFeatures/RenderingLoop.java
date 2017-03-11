@@ -1,69 +1,18 @@
 package OpenGLFeatures;
 
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_FALSE;
-import static org.lwjgl.opengl.GL11.GL_LINEAR;
-import static org.lwjgl.opengl.GL11.GL_MODELVIEW;
-import static org.lwjgl.opengl.GL11.GL_PROJECTION;
-import static org.lwjgl.opengl.GL11.GL_RGBA;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_1D;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11.glBindTexture;
 import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glEnable;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL11.glLoadIdentity;
-import static org.lwjgl.opengl.GL11.glMatrixMode;
-import static org.lwjgl.opengl.GL11.glOrtho;
-import static org.lwjgl.opengl.GL11.glRotatef;
-import static org.lwjgl.opengl.GL11.glTexImage1D;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
-import static org.lwjgl.opengl.GL11.glTranslatef;
-import static org.lwjgl.opengl.GL20.GL_COMPILE_STATUS;
-import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
-import static org.lwjgl.opengl.GL20.GL_INFO_LOG_LENGTH;
-import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
-import static org.lwjgl.opengl.GL20.glAttachShader;
-import static org.lwjgl.opengl.GL20.glCompileShader;
-import static org.lwjgl.opengl.GL20.glCreateProgram;
-import static org.lwjgl.opengl.GL20.glCreateShader;
 import static org.lwjgl.opengl.GL20.glDeleteProgram;
 import static org.lwjgl.opengl.GL20.glDeleteShader;
-import static org.lwjgl.opengl.GL20.glGetShaderInfoLog;
-import static org.lwjgl.opengl.GL20.glGetShaderi;
-import static org.lwjgl.opengl.GL20.glLinkProgram;
-import static org.lwjgl.opengl.GL20.glShaderSource;
 import static org.lwjgl.opengl.GL20.glUseProgram;
-import static org.lwjgl.opengl.GL20.glValidateProgram;
 
 import java.awt.Canvas;
-import java.awt.Font;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.Util;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.newdawn.slick.Color;
-import org.newdawn.slick.TrueTypeFont;
 
-import net.sourceforge.fastpng.PNGDecoder;
 import tools.DicomImage;
 
 public class RenderingLoop {	
@@ -72,7 +21,6 @@ public class RenderingLoop {
 	private static int paletteId = -1;
 		
 	private static int[] palettes = new int[4];
-	private static boolean closeRequested = false;
 	private static float scale = 1.0f;
 	private static boolean isImageLoad = false;
 	
@@ -86,11 +34,8 @@ public class RenderingLoop {
 	private static boolean isImageChanged = false;
 	private static boolean isMesurements = false;
 	
-	private static float centerX = 0.0f;
-	private static float centerY = 0.0f;
-	
-	private static float moveX = 0.0f;
-	private static float moveY = 0.0f;
+	private static float deltaPosX = 0.0f;
+	private static float deltaPosY = 0.0f;
 	
 	private static float lastX;
 	private static float lastY;
@@ -106,7 +51,6 @@ public class RenderingLoop {
 	private static int currentImageNumber;
 	
 	private static Float pixelSpacing;
-	private static boolean isByte = false;
 	private static Boolean isZoom = null;
 	private static DicomImage image;
 	
@@ -132,14 +76,14 @@ public class RenderingLoop {
 		}
 	}
 	
-	
 	private static void checkMousePressed()
 	{
 		if(Mouse.isButtonDown(0))
 		{
 			if(!isFirstMove)
 			{
-				moveFrame((float)(Mouse.getX() - lastX), (float)(lastY - Mouse.getY()));
+				deltaPosX = Mouse.getX() - lastX;
+				deltaPosY = Mouse.getY() - lastY;
 			}
 			lastX = Mouse.getX();
 			lastY = Mouse.getY();
@@ -148,6 +92,8 @@ public class RenderingLoop {
 		else
 		{
 			isFirstMove = true;
+			deltaPosY = 0f;
+			deltaPosX = 0f;
 		}
 	}
 	
@@ -176,27 +122,6 @@ public class RenderingLoop {
 		}
 	}
 	
-	private static void moveFrame(float x, float y)
-	{
-		moveX = x;
-		moveY = y;
-		centerX += x;
-		centerY += y;
-	}
-	
-	private static void rotate() {
-		if (isRotate) {
-			
-			int scalingWidth = (int) (scaleHeight * scale);
-			int shiftW = (displayHeight - scalingWidth) / 2;
-			
-			glTranslatef(displayHeight / 2 - shiftW, displayHeight / 2 - shiftW, 0.0f);
-			glRotatef(90.f, 0.0f, 0.0f, 1.0f);
-			glTranslatef(-displayHeight / 2 + shiftW, -displayHeight / 2 + shiftW, 0.0f);
-
-			isRotate = false;
-		}
-	}
 	
 	public static void changePalette(String paletteName)
 	{
@@ -243,15 +168,13 @@ public class RenderingLoop {
 			Util.checkGLError();
 			glClear(GL_COLOR_BUFFER_BIT);
 			Util.checkGLError();
-			//glTranslatef(moveX, moveY, 0);
-			//rotate();
 			glUseProgram(ContextInitialization.getShaderProgramInterval());
 			Util.checkGLError();
 			bindImage();
 			if (isImageLoad) 
 			{
 				//Image
-				ImageRender.renderImage(from, to, isInvert, paletteId, isZoom, isRotate, moveX, moveY);
+				ImageRender.renderImage(from, to, isInvert, paletteId, isZoom, isRotate, deltaPosX, deltaPosY);
 				//Measurements
 				MesurementsRender.renderMesurements(scale, isMesurements);
 				//Additional info
@@ -259,7 +182,6 @@ public class RenderingLoop {
 			}
 			isZoom = null;
 			isRotate = false;
-			moveFrame(0.0f, 0.0f);
 			glUseProgram(0);
 			Display.sync(60);
 			Display.update();
@@ -315,5 +237,4 @@ public class RenderingLoop {
 		image = img;
 		isImageChanged = true;
 	}
-
 }
