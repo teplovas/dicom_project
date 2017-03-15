@@ -66,18 +66,18 @@ public class ImageRender {
 		ImageRender.disHeight = disHeight;
 		ImageRender.disWidth = disWidth;
 
-		modelPos = new Vector3f(0, 0, 0);
-		modelAngle = new Vector3f(0, 0, 0);
-		modelScale = new Vector3f(1, 1, 1);
-		cameraPos = new Vector3f(0, 0, -1);
-		setupMatrices();
-
 		projectionMatrixLocation = glGetUniformLocation(shaderProgramInterval, "projectionMatrix");
 		viewMatrixLocation = glGetUniformLocation(shaderProgramInterval, "viewMatrix");
 		modelMatrixLocation = glGetUniformLocation(shaderProgramInterval, "modelMatrix");
 	}
 
 	private static void setupMatrices() {
+		
+		modelPos = new Vector3f(0, 0, 0);
+		modelAngle = new Vector3f(0, 0, 0);
+		modelScale = new Vector3f(1, 1, 1);
+		cameraPos = new Vector3f(0, 0, -1);
+		
 		// Setup projection matrix
 		projectionMatrix = new Matrix4f();
 		float fieldOfView = 60f;
@@ -85,7 +85,7 @@ public class ImageRender {
 		float near_plane = 0.1f;
 		float far_plane = 100f;
 
-		float y_scale = coTangent(degreesToRadians(fieldOfView / 2f));
+		float y_scale = 1;//Tools.coTangent(Tools.degreesToRadians(fieldOfView / 2f));
 		float x_scale = y_scale / aspectRatio;
 		float frustum_length = far_plane - near_plane;
 
@@ -104,10 +104,6 @@ public class ImageRender {
 
 		// Create a FloatBuffer with the proper size to store our matrices later
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
-	}
-
-	private static float coTangent(float angle) {
-		return (float) (1f / Math.tan(angle));
 	}
 
 	private static void calculateScale() {
@@ -137,9 +133,9 @@ public class ImageRender {
 		ImageRender.height = img.getHeight();
 		calculateScale();
 		Util.checkGLError();
-		glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture1"), 4);
+		glUniform1i(glGetUniformLocation(shaderProgramInterval, "texture1"), 6);
 		Util.checkGLError();
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		Util.checkGLError();
 		glBindTexture(GL_TEXTURE_2D, imageTextureId);
 		Util.checkGLError();
@@ -202,9 +198,9 @@ public class ImageRender {
 		// Scale, translate and rotate model
 		Matrix4f.scale(modelScale, modelMatrix, modelMatrix);
 		Matrix4f.translate(modelPos, modelMatrix, modelMatrix);
-		Matrix4f.rotate(degreesToRadians(modelAngle.z), new Vector3f(0, 0, 1), modelMatrix, modelMatrix);
-		Matrix4f.rotate(degreesToRadians(modelAngle.y), new Vector3f(0, 1, 0), modelMatrix, modelMatrix);
-		Matrix4f.rotate(degreesToRadians(modelAngle.x), new Vector3f(1, 0, 0), modelMatrix, modelMatrix);
+		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.z), new Vector3f(0, 0, 1), modelMatrix, modelMatrix);
+		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.y), new Vector3f(0, 1, 0), modelMatrix, modelMatrix);
+		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.x), new Vector3f(1, 0, 0), modelMatrix, modelMatrix);
 
 		projectionMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();
@@ -219,10 +215,6 @@ public class ImageRender {
 		GL20.glUniformMatrix4(modelMatrixLocation, false, matrix44Buffer);
 
 		// GL20.glUseProgram(0);
-	}
-
-	private static float degreesToRadians(float degrees) {
-		return degrees * (float) (Math.PI / 180d);
 	}
 
 	protected static void renderImage(int from, int to, boolean isInvert, int paletteId, Boolean isZoom,
@@ -241,7 +233,7 @@ public class ImageRender {
 		glUniform1i(glGetUniformLocation(shaderProgramInterval, "isInvert"), isInvert ? 1 : 0);
 		Util.checkGLError();
 
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL_TEXTURE_2D, imageTextureId);
 
 		int curPaletteId = isUsePallete ? paletteId : 0;
@@ -250,8 +242,8 @@ public class ImageRender {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + curPaletteId);
 		glBindTexture(GL_TEXTURE_1D, palettes[curPaletteId]);
 
-		int scalingWidth = (int) (scaleWidth/* * scale */);
-		int scalingHeight = (int) (scaleHeight/* * scale */);
+		int scalingWidth = (int) (scaleWidth);
+		int scalingHeight = (int) (scaleHeight);
 
 		int shiftW = (disWidth - scalingWidth) / 2;
 		int shiftH = (disHeight - scalingHeight) / 2;

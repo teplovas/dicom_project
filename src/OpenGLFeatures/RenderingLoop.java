@@ -3,14 +3,11 @@ package OpenGLFeatures;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL20.glDeleteProgram;
-import static org.lwjgl.opengl.GL20.glDeleteShader;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 
 import java.awt.Canvas;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.Util;
 
 import tools.DicomImage;
@@ -19,13 +16,8 @@ public class RenderingLoop {
 	static int shaderProgramInterval;
 	
 	private static int paletteId = -1;
-		
-	private static int[] palettes = new int[4];
 	private static float scale = 1.0f;
 	private static boolean isImageLoad = false;
-	
-	private static int fragmentShaderInterval;
-	private static int vertexShaderInterval;
 	
 	private static int from;
 	private static int to;
@@ -44,13 +36,9 @@ public class RenderingLoop {
 	private static int displayWidth;
 	private static int displayHeight;
 	
-	private static int scaleWidth;
-	private static int scaleHeight;
-	
 	private static int numberOfImages;
 	private static int currentImageNumber;
 	
-	private static Float pixelSpacing;
 	private static Boolean isZoom = null;
 	private static DicomImage image;
 	
@@ -58,10 +46,11 @@ public class RenderingLoop {
 	{
 		displayWidth = canvas.getWidth();
 		displayHeight = canvas.getHeight();
+		
 		ContextInitialization.init(canvas);
-		ImageRender.init(ContextInitialization.getShaderProgramInterval(), 
-				5, ContextInitialization.getPalettes(), displayWidth, displayHeight);
-		MesurementsRender.init(displayWidth, displayHeight);
+		ImageRender.init(ContextInitialization.getImageShaderProgram(), 
+				7, ContextInitialization.getPalettes(), displayWidth, displayHeight);
+		MeasurementsRender.init(displayWidth, displayHeight, ContextInitialization.getMeasureShaderProgram());
 		AdditionalInfoRender.init(displayHeight);
 	}
 	
@@ -70,7 +59,6 @@ public class RenderingLoop {
 		if(isImageChanged)
 		{
 			ImageRender.bindImage(image);
-			pixelSpacing = image.getPixelSpacing();
 			isImageLoad = true;
 			isImageChanged = false;
 		}
@@ -168,7 +156,7 @@ public class RenderingLoop {
 			Util.checkGLError();
 			glClear(GL_COLOR_BUFFER_BIT);
 			Util.checkGLError();
-			glUseProgram(ContextInitialization.getShaderProgramInterval());
+			glUseProgram(ContextInitialization.getImageShaderProgram());
 			Util.checkGLError();
 			bindImage();
 			if (isImageLoad) 
@@ -176,8 +164,9 @@ public class RenderingLoop {
 				//Image
 				ImageRender.renderImage(from, to, isInvert, paletteId, isZoom, isRotate, deltaPosX, deltaPosY);
 				//Measurements
-				MesurementsRender.renderMesurements(scale, isMesurements);
+				MeasurementsRender.renderMeasurements(scale, isMesurements, isZoom, isRotate, deltaPosX, deltaPosY);
 				//Additional info
+				glUseProgram(0);
 				AdditionalInfoRender.renderInfo(currentImageNumber, numberOfImages);
 			}
 			isZoom = null;
@@ -187,13 +176,7 @@ public class RenderingLoop {
 			Display.update();
 			
 		}
-		GL11.glDeleteTextures(palettes[0]);
-		GL11.glDeleteTextures(palettes[1]);
-		GL11.glDeleteTextures(palettes[2]);
-		GL11.glDeleteTextures(palettes[3]);
-		glDeleteProgram(shaderProgramInterval);
-		glDeleteShader(vertexShaderInterval);
-		glDeleteShader(fragmentShaderInterval);
+		ContextInitialization.destroyContext();
 
 		Display.destroy();
 		System.exit(0);

@@ -25,6 +25,8 @@ import static org.lwjgl.opengl.GL20.glAttachShader;
 import static org.lwjgl.opengl.GL20.glCompileShader;
 import static org.lwjgl.opengl.GL20.glCreateProgram;
 import static org.lwjgl.opengl.GL20.glCreateShader;
+import static org.lwjgl.opengl.GL20.glDeleteProgram;
+import static org.lwjgl.opengl.GL20.glDeleteShader;
 import static org.lwjgl.opengl.GL20.glGetShaderInfoLog;
 import static org.lwjgl.opengl.GL20.glGetShaderi;
 import static org.lwjgl.opengl.GL20.glLinkProgram;
@@ -45,6 +47,7 @@ import java.nio.IntBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.Util;
@@ -53,25 +56,14 @@ import net.sourceforge.fastpng.PNGDecoder;
 
 public class ContextInitialization {
 	
-	private static int shaderProgramInterval;
-	public static int getShaderProgramInterval() {
-		return shaderProgramInterval;
-	}
-
-	public static void setShaderProgramInterval(int shaderProgramInterval) {
-		ContextInitialization.shaderProgramInterval = shaderProgramInterval;
-	}
-
-	public static int[] getPalettes() {
-		return palettes;
-	}
-
-	public static void setPalettes(int[] palettes) {
-		ContextInitialization.palettes = palettes;
-	}
-
-	private static int fragmentShaderInterval;
-	private static int vertexShaderInterval;
+	private static int imageShaderProgram;
+	private static int imageFragmentShader;
+	private static int imageVertexShader;
+	
+	private static int measureShaderProgram;
+	private static int measureFragmentShader;
+	private static int measureVertexShader;
+	
 	private static int imageTextureId = 0;
 	private static int[] palettes = new int[4];
 	private static int displayWidth;
@@ -93,22 +85,39 @@ public class ContextInitialization {
 			Display.destroy();
 			System.exit(1);
 		}
+		
+		MeasurementsRender.initFont();
+		AdditionalInfoRender.initFont();
 	}
 	
 	private static void loadShadersAndPallettes()
 	{
-		shaderProgramInterval = glCreateProgram();
+		//===============image shaders=================================
+		imageShaderProgram = glCreateProgram();
 		
-		fragmentShaderInterval = createShader("shaderWindow.frag", true);
-		vertexShaderInterval = createShader("shaderWindow.vert", false);
+		imageFragmentShader = createShader("shaderWindow.frag", true);
+		imageVertexShader = createShader("shaderWindow.vert", false);
 		
-		glAttachShader(shaderProgramInterval, vertexShaderInterval);
-		glAttachShader(shaderProgramInterval, fragmentShaderInterval);
+		glAttachShader(imageShaderProgram, imageVertexShader);
+		glAttachShader(imageShaderProgram, imageFragmentShader);
 		
-		GL20.glBindAttribLocation(shaderProgramInterval, 0, "in_Position");
+		GL20.glBindAttribLocation(imageShaderProgram, 0, "in_Position");
 		
-		glLinkProgram(shaderProgramInterval);
-		glValidateProgram(shaderProgramInterval);
+		glLinkProgram(imageShaderProgram);
+		glValidateProgram(imageShaderProgram);
+		
+		//==============measure shaders=================================
+		measureShaderProgram = glCreateProgram();
+		
+		//measureFragmentShader = createShader("shaderMeasure.frag", true);
+		measureVertexShader = createShader("shaderMeasure.vert", false);
+		
+		glAttachShader(measureShaderProgram, measureVertexShader);
+		//glAttachShader(measureShaderProgram, measureFragmentShader);
+		
+		glLinkProgram(measureShaderProgram);
+		glValidateProgram(measureShaderProgram);
+		//==============================================================
 		
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -116,7 +125,7 @@ public class ContextInitialization {
 		glMatrixMode(GL_MODELVIEW);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_TEXTURE_1D);
-		glUseProgram(shaderProgramInterval);
+		glUseProgram(imageShaderProgram);
 		loadPalettes();
 	}
 	
@@ -217,10 +226,40 @@ public class ContextInitialization {
 		return shaderSource;
 	}
 	
+	public static int getImageShaderProgram() {
+		return imageShaderProgram;
+	}
+	
+	public static int getMeasureShaderProgram() {
+		return measureShaderProgram;
+	}
+
+	public static int[] getPalettes() {
+		return palettes;
+	}
+
+	public static void setPalettes(int[] palettes) {
+		ContextInitialization.palettes = palettes;
+	}
+	
 	public static void init(Canvas canv)
 	{
 		initDisplay(canv);
 		loadShadersAndPallettes();
+	}
+	
+	public static void destroyContext()
+	{
+		GL11.glDeleteTextures(palettes[0]);
+		GL11.glDeleteTextures(palettes[1]);
+		GL11.glDeleteTextures(palettes[2]);
+		GL11.glDeleteTextures(palettes[3]);
+		glDeleteProgram(imageShaderProgram);
+		glDeleteShader(imageFragmentShader);
+		glDeleteShader(imageVertexShader);
+		glDeleteProgram(measureShaderProgram);
+		glDeleteShader(measureFragmentShader);
+		glDeleteShader(measureVertexShader);
 	}
 
 }
