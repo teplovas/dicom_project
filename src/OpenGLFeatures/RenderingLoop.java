@@ -6,9 +6,14 @@ import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 
 import java.awt.Canvas;
+import java.nio.FloatBuffer;
+
+import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.Util;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector3f;
 
 import tools.DicomImage;
 
@@ -42,6 +47,16 @@ public class RenderingLoop {
 	private static Boolean isZoom = null;
 	private static DicomImage image;
 	
+	private static Matrix4f projectionMatrix = null;
+	private static Matrix4f viewMatrix = null;
+	private static Matrix4f modelMatrix = null;
+	private static Vector3f modelPos = null;
+	private static Vector3f modelAngle = null;
+	private static Vector3f modelScale = null;
+	private static Vector3f cameraPos = null;
+	private static Matrix4f transfMatrix = null;
+	private static FloatBuffer transformMatrix = null;
+	
 	public static void init(Canvas canvas) 
 	{
 		displayWidth = canvas.getWidth();
@@ -54,6 +69,39 @@ public class RenderingLoop {
 		AdditionalInfoRender.init(displayHeight);
 	}
 	
+	private static void setupMatrices(int width, int height) {
+		modelPos = new Vector3f(0, 0, 0);
+		modelAngle = new Vector3f(0, 0, 0);
+		modelScale = new Vector3f(1, 1, 1);
+		cameraPos = new Vector3f(0, 0, -1);
+		
+		// Setup projection matrix
+		projectionMatrix = new Matrix4f();
+		float aspectRatio = (float) width / (float) height;
+		float near_plane = 0.1f;
+		float far_plane = 100f;
+
+		float y_scale = 1;//Tools.coTangent(Tools.degreesToRadians(fieldOfView / 2f));
+		float x_scale = y_scale / aspectRatio;
+		float frustum_length = far_plane - near_plane;
+
+		projectionMatrix.m00 = x_scale;
+		projectionMatrix.m11 = y_scale;
+		projectionMatrix.m22 = -((far_plane + near_plane) / frustum_length);
+		projectionMatrix.m23 = -1;
+		projectionMatrix.m32 = -((2 * near_plane * far_plane) / frustum_length);
+		projectionMatrix.m33 = 0;
+
+		// Setup view matrix
+		viewMatrix = new Matrix4f();
+
+		// Setup model matrix
+		modelMatrix = new Matrix4f();
+
+		// Create a FloatBuffer with the proper size to store our matrices later
+		transformMatrix = BufferUtils.createFloatBuffer(16);
+	}
+	
 	public static void bindImage()
 	{
 		if(isImageChanged)
@@ -61,6 +109,7 @@ public class RenderingLoop {
 			ImageRender.bindImage(image);
 			isImageLoad = true;
 			isImageChanged = false;
+			setupMatrices(image.getWidth(), image.getHeight());
 		}
 	}
 	
@@ -140,6 +189,43 @@ public class RenderingLoop {
 		return 0;
 	}
 	
+	private static void transformMatrix(Boolean isZoom, boolean isRotate, float moveX, float moveY) {
+		// -- Input processing
+		float rotationDelta = 90f;
+		float scaleDelta = 0.1f;
+		Vector3f scaleAddResolution = new Vector3f(scaleDelta, scaleDelta, scaleDelta);
+		Vector3f scaleMinusResolution = new Vector3f(-scaleDelta, -scaleDelta, -scaleDelta);
+		if (isZoom != null) {
+			Vector3f.add(modelScale, isZoom ? scaleAddResolution : scaleMinusResolution, modelScale);
+		}
+		if (isRotate) {
+			modelAngle.z += rotationDelta;
+		}
+		modelPos.y += moveY / 500f;
+		modelPos.x += moveX / 500f;
+
+		// -- Update matrices
+		// Reset view and model matrices
+		viewMatrix = new Matrix4f();
+		modelMatrix = new Matrix4f();
+
+		// Translate camera
+		Matrix4f.translate(cameraPos, viewMatrix, viewMatrix);
+
+		// Scale, translate and rotate model
+		Matrix4f.scale(modelScale, modelMatrix, modelMatrix);
+		Matrix4f.translate(modelPos, modelMatrix, modelMatrix);
+		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.z), new Vector3f(0, 0, 1), modelMatrix, modelMatrix);
+		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.y), new Vector3f(0, 1, 0), modelMatrix, modelMatrix);
+		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.x), new Vector3f(1, 0, 0), modelMatrix, modelMatrix);
+
+		transfMatrix = new Matrix4f();
+		Matrix4f.mul(projectionMatrix, viewMatrix, transfMatrix);
+		Matrix4f.mul(transfMatrix, modelMatrix, transfMatrix);
+		
+		transfMatrix.store(transformMatrix);
+		transformMatrix.flip();
+	}
 	
 	public static void startRender()
 	{
@@ -156,18 +242,18 @@ public class RenderingLoop {
 			Util.checkGLError();
 			glClear(GL_COLOR_BUFFER_BIT);
 			Util.checkGLError();
-			glUseProgram(ContextInitialization.getImageShaderProgram());
-			Util.checkGLError();
 			bindImage();
 			if (isImageLoad) 
 			{
+				transformMatrix(isZoom, isRotate, deltaPosX, deltaPosY);
 				//Image
-				ImageRender.renderImage(from, to, isInvert, paletteId, isZoom, isRotate, deltaPosX, deltaPosY);
+				ImageRender.renderImage(from, to, isInvert, paletteId, transformMatrix);
 				//Measurements
-				MeasurementsRender.renderMeasurements(scale, isMesurements, isZoom, isRotate, deltaPosX, deltaPosY);
+				MeasurementsRender.renderMeasurements(scale, isMesurements, transformMatrix);
 				//Additional info
 				glUseProgram(0);
 				AdditionalInfoRender.renderInfo(currentImageNumber, numberOfImages);
+				transformMatrix.clear();
 			}
 			isZoom = null;
 			isRotate = false;
@@ -219,5 +305,9 @@ public class RenderingLoop {
 	{
 		image = img;
 		isImageChanged = true;
+	}
+
+	public static Matrix4f getTransformMatrix() {
+		return transfMatrix;
 	}
 }

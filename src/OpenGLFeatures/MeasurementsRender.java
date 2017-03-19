@@ -12,9 +12,6 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.Point;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.TrueTypeFont;
@@ -34,20 +31,8 @@ public class MeasurementsRender {
 	private static Point beginPos = null;
 	private static boolean isMousePressed = false;
 	private static boolean isMousePosChanged = false;
-	private static int projectionMatrixLocation = 0;
-	private static int viewMatrixLocation = 0;
-	private static int modelMatrixLocation = 0;
-	private static Matrix4f projectionMatrix = null;
-	private static Matrix4f viewMatrix = null;
-	private static Matrix4f modelMatrix = null;
-	private static Vector3f modelPos = null;
-	private static Vector3f modelAngle = null;
-	private static Vector3f modelScale = null;
-	private static Vector3f cameraPos = null;
-	private static FloatBuffer matrix44Buffer = null;
-	private static Vector3f scaleAddResolution = new Vector3f(0.1f, 0.1f, 0.1f);
-	private static Vector3f scaleMinusResolution = new Vector3f(-0.1f, -0.1f, -0.1f);
-	private static float rotationDelta = 90f;
+	
+	private static int transformMatrixLocation = 0;
 	
 	private static int programId;
 	
@@ -57,12 +42,7 @@ public class MeasurementsRender {
 		MeasurementsRender.disWidth = disWidth;
 		MeasurementsRender.programId = pId;
 		
-		//initFont();
-		
-		projectionMatrixLocation = glGetUniformLocation(programId, "projectionMatrix");
-		viewMatrixLocation = glGetUniformLocation(programId, "viewMatrix");
-		modelMatrixLocation = glGetUniformLocation(programId, "modelMatrix");
-		setupMatrices();
+		transformMatrixLocation = glGetUniformLocation(programId, "transformMatrix");
 	}
 	
 	public static void initFont()
@@ -71,85 +51,10 @@ public class MeasurementsRender {
 		font = new TrueTypeFont(awtFont, true);
 	}
 	
-	private static void setupMatrices() {
-		modelPos = new Vector3f(0, 0, 0);
-		modelAngle = new Vector3f(0, 0, 0);
-		modelScale = new Vector3f(1, 1, 1);
-		cameraPos = new Vector3f(0, 0, -1);
-		// Setup projection matrix
-		projectionMatrix = new Matrix4f();
-		float fieldOfView = 60f;
-		float aspectRatio = (float) 1024 / (float) 1024;
-		float near_plane = 0.1f;
-		float far_plane = 100f;
-
-		float y_scale = 1;//Tools.coTangent(Tools.degreesToRadians(fieldOfView / 2f));
-		float x_scale = y_scale / aspectRatio;
-		float frustum_length = far_plane - near_plane;
-
-		projectionMatrix.m00 = x_scale;
-		projectionMatrix.m11 = y_scale;
-		projectionMatrix.m22 = -((far_plane + near_plane) / frustum_length);
-		projectionMatrix.m23 = -1;
-		projectionMatrix.m32 = -((2 * near_plane * far_plane) / frustum_length);
-		projectionMatrix.m33 = 0;
-
-		// Setup view matrix
-		viewMatrix = new Matrix4f();
-
-		// Setup model matrix
-		modelMatrix = new Matrix4f();
-
-		// Create a FloatBuffer with the proper size to store our matrices later
-		matrix44Buffer = BufferUtils.createFloatBuffer(16);
-	}
-	
-	private static void transform(Boolean isZoom, boolean isRotate, float moveX, float moveY) {
-		// -- Input processing
-		if (isZoom != null) {
-			Vector3f.add(modelScale, isZoom ? scaleAddResolution : scaleMinusResolution, modelScale);
-		}
-		modelPos.y += moveY / 500f;
-		modelPos.x += moveX / 500f;
-		
-		if (isRotate) {
-			modelAngle.z += rotationDelta;
-		}
-
-		// -- Update matrices
-		// Reset view and model matrices
-		viewMatrix = new Matrix4f();
-		modelMatrix = new Matrix4f();
-
-		// Translate camera
-		Matrix4f.translate(cameraPos, viewMatrix, viewMatrix);
-
-		// Scale, translate and rotate model
-		Matrix4f.scale(modelScale, modelMatrix, modelMatrix);
-		Matrix4f.translate(modelPos, modelMatrix, modelMatrix);
-		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.z), new Vector3f(0, 0, 1), modelMatrix, modelMatrix);
-		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.y), new Vector3f(0, 1, 0), modelMatrix, modelMatrix);
-		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.x), new Vector3f(1, 0, 0), modelMatrix, modelMatrix);
-
-		projectionMatrix.store(matrix44Buffer);
-		matrix44Buffer.flip();
-		GL20.glUniformMatrix4(projectionMatrixLocation, false, matrix44Buffer);
-
-		viewMatrix.store(matrix44Buffer);
-		matrix44Buffer.flip();
-		GL20.glUniformMatrix4(viewMatrixLocation, false, matrix44Buffer);
-
-		modelMatrix.store(matrix44Buffer);
-		matrix44Buffer.flip();
-		GL20.glUniformMatrix4(modelMatrixLocation, false, matrix44Buffer);
-	}
-	
-	
-	protected static void renderMeasurements(float scale, boolean isMesurements, Boolean isZoom, boolean isRotate, 
-			float moveX, float moveY)
+	protected static void renderMeasurements(float scale, boolean isMesurements, FloatBuffer transformMatrix)
 	{
 		glUseProgram(programId);
-		transform(isZoom, isRotate, moveX, moveY);
+		GL20.glUniformMatrix4(transformMatrixLocation, false, transformMatrix);
 		checkKeyPressed();
 		for(Measure m : measurements)
 		{
