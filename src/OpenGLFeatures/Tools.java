@@ -36,7 +36,7 @@ public class Tools {
 	
 	public static Point convertToImageCoord(Point screenCoord)
 	{
-		return new Point(0, 0);
+		return screenCoord;
 	}
 	
 	public static Point convertToScreenCoord(Point imageCoord)

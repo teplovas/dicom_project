@@ -66,20 +66,18 @@ public class ImageRender {
 		boolean isHGreate = height > disHeight;
 
 		double ratio = (double) width / (double) height;
+		
+		scaleHeight = height;
+		scaleWidth = width;
 
 		if (isWGreate && isHGreate && width > height || isWGreate) {
 			scaleWidth = disWidth;
 			scaleHeight = (int) ((float) disWidth / ratio);
-			return;
 		} else if (isWGreate && isHGreate && width < height || isHGreate) {
 			scaleHeight = disHeight;
 			scaleWidth = (int) ((float) disHeight * ratio);
-			return;
 		}
 
-		scaleHeight = height;
-		scaleWidth = width;
-		
 		wShift = (disWidth - scaleWidth) / 2;
 		hShift = (disHeight - scaleHeight) / 2;
 	}
@@ -170,7 +168,7 @@ public class ImageRender {
 		glVertex2i(scaleWidth + wShift, scaleHeight + hShift);
 
 		glTexCoord2d(0, 1);
-		glVertex2i(hShift, scaleHeight + hShift);
+		glVertex2i(wShift, scaleHeight + hShift);
 		glEnd();
 
 		glUseProgram(0);

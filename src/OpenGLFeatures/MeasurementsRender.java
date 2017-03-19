@@ -112,7 +112,8 @@ public class MeasurementsRender {
 			{
 				if(isLineDrawing)
 				{
-					measurements.add(new Measure(new Point(curX, curY), new Point(Mouse.getX(), disHeight - Mouse.getY())));
+					measurements.add(Measure.createImgCoordMeasure(new Point(curX, curY), 
+							new Point(Mouse.getX(), disHeight - Mouse.getY())));
 				}
 				isLineDrawing = false;
 			}
@@ -248,6 +249,12 @@ public class MeasurementsRender {
 			diffY = pixelSpacing != null ? pixelSpacing * diffY : diffY;
 			length = Math.sqrt(diffX * diffX + diffY * diffY);
 		}
+		
+		public static Measure createImgCoordMeasure(Point from, Point to)
+		{
+			return new Measure(from, to/*Tools.convertToImageCoord(from), Tools.convertToImageCoord(to)*/);
+		}
+		
 		public Point getPointFrom() {
 			return pointFrom;
 		}
