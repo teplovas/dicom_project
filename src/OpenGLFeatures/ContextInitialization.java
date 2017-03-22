@@ -80,6 +80,7 @@ public class ContextInitialization {
 			Display.setVSyncEnabled(true);
 			displayHeight = canv.getHeight();
 			displayWidth = canv.getWidth();
+			System.out.println("width = " + displayWidth + ", height = " + displayHeight);
 		} catch (LWJGLException e) {
 			System.err.println("The display wasn't initialized correctly. :(");
 			Display.destroy();

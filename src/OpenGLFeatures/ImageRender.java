@@ -156,6 +156,9 @@ public class ImageRender {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + curPaletteId);
 		glBindTexture(GL_TEXTURE_1D, palettes[curPaletteId]);
 
+//		wShift = 0;
+//		hShift = 0;
+		
 		glEnable(GL_TEXTURE_2D);
 		glBegin(GL_QUADS);
 		glTexCoord2d(0, 0);

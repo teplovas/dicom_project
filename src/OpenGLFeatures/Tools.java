@@ -5,7 +5,6 @@ import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.util.Point;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -34,16 +33,52 @@ public class Tools {
 		return (float) (1f / Math.tan(angle));
 	}
 	
+//	public static Point convertToImageCoord(Point screenCoord)
+//	{
+//		float x = (screenCoord.getX() - ImageRender.getWShift()) / RenderingLoop.displayWidth;
+//		float y = (screenCoord.getY() - ImageRender.getHShift()) / RenderingLoop.displayHeight;
+//		Matrix4f mat = RenderingLoop.getTransformMatrix();
+//		Matrix4f matInv = Matrix4f.invert(mat, null);
+//		//Matrix4f resMat = Matrix4f.mul(mat, matInv, null);
+//		Vector4f res = Matrix4f.transform(matInv, new Vector4f(x, y, 0, 1), null);
+//		x = res.x * RenderingLoop.displayWidth;
+//		y = res.y * RenderingLoop.displayHeight;
+//		System.out.println("Image coord: " + x + " : " + y);
+//		return new Point(x, y);
+//		//return screenCoord;
+//	}
+//	
+//	public static Point convertToScreenCoord(Point imageCoord)
+//	{		
+//		float x = (imageCoord.getX() + ImageRender.getWShift()) / RenderingLoop.displayWidth;
+//		float y = (imageCoord.getY() - ImageRender.getHShift()) / RenderingLoop.displayHeight;
+//		
+//		Vector4f res = Matrix4f.transform(RenderingLoop.getTransformMatrix(), new Vector4f(x, y, 0, 1), null);
+//		x = res.x * RenderingLoop.displayWidth;
+//		y = res.y * RenderingLoop.displayHeight;
+//		return new Point(x, y);
+//		//return imageCoord;
+//	}
+	
 	public static Point convertToImageCoord(Point screenCoord)
 	{
-		return screenCoord;
+		float x = 2 * (screenCoord.getX()) / RenderingLoop.displayWidth - 1;
+		float y = 2 * (screenCoord.getY()) / RenderingLoop.displayHeight - 1;
+		Matrix4f mat = RenderingLoop.getTransformMatrix();
+		Matrix4f matInv = Matrix4f.invert(mat, null);
+		Vector4f res = Matrix4f.transform(matInv, new Vector4f(x, y, 0, 1), null);
+		
+		return new Point(res.x, res.y);
 	}
 	
 	public static Point convertToScreenCoord(Point imageCoord)
 	{		
-		int x = (imageCoord.getX() + ImageRender.getWShift());
-		int y = (imageCoord.getY() + ImageRender.getHShift());
+		float x = imageCoord.getX();
+		float y = imageCoord.getY();
+		
 		Vector4f res = Matrix4f.transform(RenderingLoop.getTransformMatrix(), new Vector4f(x, y, 0, 1), null);
-		return new Point((int)res.x, (int)res.y);
+		x = (res.x + 1) * RenderingLoop.displayWidth/2;
+		y = (res.y + 1) * RenderingLoop.displayHeight/2;
+		return new Point(x, y);
 	}
 }

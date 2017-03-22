@@ -38,8 +38,8 @@ public class RenderingLoop {
 	private static float lastY;
 	private static boolean isFirstMove = true;
 	
-	private static int displayWidth;
-	private static int displayHeight;
+	public static int displayWidth;
+	public static int displayHeight;
 	
 	private static int numberOfImages;
 	private static int currentImageNumber;

@@ -11,7 +11,6 @@ import java.util.List;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.util.Point;
 import org.lwjgl.input.Keyboard;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.TrueTypeFont;
@@ -40,9 +39,9 @@ public class MeasurementsRender {
 	{
 		MeasurementsRender.disHeight = disHeight;
 		MeasurementsRender.disWidth = disWidth;
-		MeasurementsRender.programId = pId;
+		MeasurementsRender.programId = 0;
 		
-		transformMatrixLocation = glGetUniformLocation(programId, "transformMatrix");
+		//transformMatrixLocation = glGetUniformLocation(programId, "transformMatrix");
 	}
 	
 	public static void initFont()
@@ -54,7 +53,7 @@ public class MeasurementsRender {
 	protected static void renderMeasurements(float scale, boolean isMesurements, FloatBuffer transformMatrix)
 	{
 		glUseProgram(programId);
-		GL20.glUniformMatrix4(transformMatrixLocation, false, transformMatrix);
+		//GL20.glUniformMatrix4(transformMatrixLocation, false, transformMatrix);
 		checkKeyPressed();
 		for(Measure m : measurements)
 		{
@@ -152,10 +151,10 @@ public class MeasurementsRender {
 	
 	private static boolean isMeasureSelected(Measure m, int mouseX, int mouseY)
 	{
-		int fromX = m.pointFrom.getX();
-		int fromY = disHeight - m.pointFrom.getY();
-		int toX = m.pointTo.getX();
-		int toY = disHeight - m.pointTo.getY();
+		float fromX = m.getPointScreenFrom().getX();
+		float fromY = disHeight - m.getPointScreenFrom().getY();
+		float toX = m.getPointScreenTo().getX();
+		float toY = disHeight - m.getPointScreenTo().getY();
 		System.out.println(mouseX + ":" + mouseY + " " + fromX + ":" + fromY + " "
 				+ toX + ":" + toY + " ");
 //		if (fromX == mouseX) return toX == mouseX;
@@ -167,7 +166,7 @@ public class MeasurementsRender {
 		return getDistance(mouseX, mouseY, fromX, fromY, toX, toY) <= MAX_DISTANCE;
 	}
 	
-	private static double getDistance(int x0, int y0, int x1, int y1, int x2, int y2)
+	private static double getDistance(int x0, int y0, float x1, float y1, float x2, float y2)
 	{
 		return Math.abs((y2 - y1)*x0 - (x2 - x1)*y0 + x2*y1 - y2*x1)/Math.sqrt((y2 - y1)*(y2 - y1) + 
 				(x2 - x1)*(x2 - x1));
@@ -175,10 +174,10 @@ public class MeasurementsRender {
 	
 	private static void printMesureInfo(Measure mesure, float scale)
 	{
-		drawLine(mesure.getPointFrom().getX(), mesure.getPointFrom().getY(), 
-				mesure.getPointTo().getX(), mesure.getPointTo().getY(), mesure.isSelected());
-		int x = mesure.getPointTo().getX();
-		int y = mesure.getPointTo().getY();
+		drawLine(mesure.getPointScreenFrom().getX(), mesure.getPointScreenFrom().getY(), 
+				mesure.getPointScreenTo().getX(), mesure.getPointScreenTo().getY(), mesure.isSelected());
+		float x = mesure.getPointScreenTo().getX();
+		float y = mesure.getPointScreenTo().getY();
 		String text = mesure.length.intValue() + (pixelSpacing != null ? " mm" : " pxl");
 		float w = text.length() * 8f;
 		float h = 20f;
@@ -197,11 +196,11 @@ public class MeasurementsRender {
 			glVertex2f(x, y + h);
 		glEnd();
 		glUseProgram(0);
-		Tools.renderString(text, mesure.pointTo.getX(), mesure.pointTo.getY(), Color.yellow, font);
+		Tools.renderString(text, mesure.getPointScreenTo().getX(), mesure.getPointScreenTo().getY(), Color.yellow, font);
 		glUseProgram(programId);
 	}
 	
-	private static void drawLine(int fromX, int fromY, int toX, int toY, boolean isSelected)
+	private static void drawLine(float fromX, float fromY, float toX, float toY, boolean isSelected)
 	{
 		glLineWidth(1.5f);
 		glDisable(GL11.GL_TEXTURE_2D);
@@ -218,8 +217,8 @@ public class MeasurementsRender {
 				glColor3f(1, 0, 0);
 			}
 			
-			glVertex2i(fromX, fromY);
-			glVertex2i(toX, toY);
+			glVertex2f(fromX, fromY);
+			glVertex2f(toX, toY);
 		glEnd();
 		glEnable(GL_TEXTURE_1D);
 		glEnable(GL_TEXTURE_2D);
@@ -252,7 +251,14 @@ public class MeasurementsRender {
 		
 		public static Measure createImgCoordMeasure(Point from, Point to)
 		{
-			return new Measure(from, to/*Tools.convertToImageCoord(from), Tools.convertToImageCoord(to)*/);
+			return new Measure(Tools.convertToImageCoord(from), Tools.convertToImageCoord(to));
+		}
+		
+		public Point getPointScreenFrom() {
+			return Tools.convertToScreenCoord(pointFrom);
+		}
+		public Point getPointScreenTo() {
+			return Tools.convertToScreenCoord(pointTo);
 		}
 		
 		public Point getPointFrom() {
