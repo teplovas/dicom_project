@@ -36,8 +36,8 @@ public class ImageRender {
 	private static int shaderProgramInterval;
 	private static int imageTextureId = 0;
 	private static int[] palettes;
-	private static int width;
-	private static int height;
+	public static int width;
+	public static int height;
 	private static int disWidth;
 	private static int disHeight;
 	private static int scaleWidth;

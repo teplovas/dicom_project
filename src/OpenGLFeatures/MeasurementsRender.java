@@ -178,7 +178,7 @@ public class MeasurementsRender {
 				mesure.getPointScreenTo().getX(), mesure.getPointScreenTo().getY(), mesure.isSelected());
 		float x = mesure.getPointScreenTo().getX();
 		float y = mesure.getPointScreenTo().getY();
-		String text = mesure.length.intValue() + (pixelSpacing != null ? " mm" : " pxl");
+		String text = mesure.length + (pixelSpacing != null ? " cm" : " pxl");
 		float w = text.length() * 8f;
 		float h = 20f;
 		
@@ -242,11 +242,16 @@ public class MeasurementsRender {
 		public Measure(Point from, Point to) {
 			pointFrom = from;
 			pointTo = to;
-			double diffX = pointFrom.getX() - pointTo.getX();
+			double diffX = (pointFrom.getX() - pointTo.getX()) * ImageRender.width;
 			diffX = pixelSpacing != null ? pixelSpacing * diffX : diffX;
-			double diffY = pointFrom.getY() - pointTo.getY();
+			double diffY = (pointFrom.getY() - pointTo.getY()) * ImageRender.height;
 			diffY = pixelSpacing != null ? pixelSpacing * diffY : diffY;
-			length = Math.sqrt(diffX * diffX + diffY * diffY);
+			length = round(Math.sqrt(diffX * diffX + diffY * diffY)/100);
+		}
+		
+		private double round(double length)
+		{
+			return Math.round(length * 100.0) / 100.0;
 		}
 		
 		public static Measure createImgCoordMeasure(Point from, Point to)

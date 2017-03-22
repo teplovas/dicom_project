@@ -6,11 +6,18 @@ import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 
 import java.awt.Canvas;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+
+import javax.imageio.ImageIO;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.Util;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
@@ -56,6 +63,7 @@ public class RenderingLoop {
 	private static Vector3f cameraPos = null;
 	private static Matrix4f transfMatrix = null;
 	private static FloatBuffer transformMatrix = null;
+	private static File fileToSave = null;
 	
 	public static void init(Canvas canvas) 
 	{
@@ -189,7 +197,8 @@ public class RenderingLoop {
 		return 0;
 	}
 	
-	private static void transformMatrix(Boolean isZoom, boolean isRotate, float moveX, float moveY) {
+	private static FloatBuffer transformMatrix(boolean isMeasure,Boolean isZoom, boolean isRotate, 
+			float moveX, float moveY) {
 		// -- Input processing
 		float rotationDelta = 90f;
 		float scaleDelta = 0.1f;
@@ -201,7 +210,14 @@ public class RenderingLoop {
 		if (isRotate) {
 			modelAngle.z += rotationDelta;
 		}
-		modelPos.y += moveY / 500f;
+//		if(isMeasure)
+//		{
+//			modelPos.y -= moveY / 500f;
+//		}
+//		else
+		{
+			modelPos.y += moveY / 500f;
+		}
 		modelPos.x += moveX / 500f;
 
 		// -- Update matrices
@@ -225,6 +241,7 @@ public class RenderingLoop {
 		
 		transfMatrix.store(transformMatrix);
 		transformMatrix.flip();
+		return transformMatrix;
 	}
 	
 	public static void startRender()
@@ -245,11 +262,18 @@ public class RenderingLoop {
 			bindImage();
 			if (isImageLoad) 
 			{
-				transformMatrix(isZoom, isRotate, deltaPosX, deltaPosY);
 				//Image
-				ImageRender.renderImage(from, to, isInvert, paletteId, transformMatrix);
+				ImageRender.renderImage(from, to, isInvert, paletteId, 
+						transformMatrix(false, isZoom, isRotate, deltaPosX, deltaPosY));
+				transformMatrix.clear();
 				//Measurements
-				MeasurementsRender.renderMeasurements(scale, isMesurements, transformMatrix);
+				MeasurementsRender.renderMeasurements(scale, isMesurements, 
+						transformMatrix(true, isZoom, isRotate, deltaPosX, deltaPosY));
+				if(fileToSave != null)
+				{
+					getPixelDData();
+					fileToSave = null;
+				}
 				//Additional info
 				glUseProgram(0);
 				AdditionalInfoRender.renderInfo(currentImageNumber, numberOfImages);
@@ -266,6 +290,40 @@ public class RenderingLoop {
 
 		Display.destroy();
 		System.exit(0);
+	}
+	
+	public static void saveScreenToFile(File file)
+	{
+		fileToSave = file;
+	}
+	
+	public static void getPixelDData()
+	{
+		GL11.glReadBuffer(GL11.GL_FRONT);
+		int width = displayWidth;
+		int height = displayHeight;
+		int bpp = 4; // Assuming a 32-bit display with a byte each for red, green, blue, and alpha.
+		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * bpp);
+		GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer );
+		
+		String format = "PNG"; // Example: "PNG" or "JPG"
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		   
+		for(int x = 0; x < width; x++) 
+		{
+		    for(int y = 0; y < height; y++)
+		    {
+		        int i = (x + (width * y)) * bpp;
+		        int r = buffer.get(i) & 0xFF;
+		        int g = buffer.get(i + 1) & 0xFF;
+		        int b = buffer.get(i + 2) & 0xFF;
+		        image.setRGB(x, height - (y + 1), (0xFF << 24) | (r << 16) | (g << 8) | b);
+		    }
+		}
+		   
+		try {
+		    ImageIO.write(image, format, fileToSave);
+		} catch (IOException e) { e.printStackTrace(); }
 	}
 	
 
