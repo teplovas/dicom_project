@@ -22,6 +22,7 @@ import org.lwjgl.opengl.Util;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
+import OpenGLFeatures.MeasurementsRender.MeasureType;
 import tools.DicomImage;
 
 public class RenderingLoop {	
@@ -36,7 +37,7 @@ public class RenderingLoop {
 	private static boolean isInvert = false;
 	private static boolean isRotate = false;
 	private static boolean isImageChanged = false;
-	private static boolean isMesurements = false;
+	private static MeasureType measureType;
 	
 	private static float deltaPosX = 0.0f;
 	private static float deltaPosY = 0.0f;
@@ -248,7 +249,7 @@ public class RenderingLoop {
 	{
 		while (!Display.isCloseRequested()) {
 			Util.checkGLError();
-			if(!isMesurements)
+			if(measureType == null)
 			{
 				checkMousePressed();
 			}
@@ -267,17 +268,18 @@ public class RenderingLoop {
 						transformMatrix(false, isZoom, isRotate, deltaPosX, deltaPosY));
 				transformMatrix.clear();
 				//Measurements
-				MeasurementsRender.renderMeasurements(scale, isMesurements, 
+				MeasurementsRender.renderMeasurements(scale, measureType, 
 						transformMatrix(true, isZoom, isRotate, deltaPosX, deltaPosY));
-				if(fileToSave != null)
-				{
-					getPixelDData();
-					fileToSave = null;
-				}
 				//Additional info
 				glUseProgram(0);
 				AdditionalInfoRender.renderInfo(currentImageNumber, numberOfImages);
 				transformMatrix.clear();
+				
+				if(fileToSave != null)
+				{
+					savePixelData();
+					fileToSave = null;
+				}
 			}
 			isZoom = null;
 			isRotate = false;
@@ -297,7 +299,7 @@ public class RenderingLoop {
 		fileToSave = file;
 	}
 	
-	public static void getPixelDData()
+	public static void savePixelData()
 	{
 		GL11.glReadBuffer(GL11.GL_FRONT);
 		int width = displayWidth;
@@ -343,8 +345,8 @@ public class RenderingLoop {
 		RenderingLoop.isInvert = isInvert;
 	}
 
-	public static void setMesurements(boolean isMesurements) {
-		RenderingLoop.isMesurements = isMesurements;
+	public static void setMesurements(MeasureType type) {
+		measureType = type;
 	}
 
 	public static void setRotate(boolean isRotate) {

@@ -76,6 +76,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.eclipse.swt.internal.win32.MEASUREITEMSTRUCT;
 
 import Application.*;
+import OpenGLFeatures.MeasurementsRender.MeasureType;
 import tools.DicomImage;
 import tools.ImageHelper;
 
@@ -182,17 +183,27 @@ public class TestFrame extends JFrame{
 		JMenu mesureMenu = new JMenu("");
 		mesureMenu.setToolTipText("Измерения");
 		
-		JCheckBoxMenuItem mesureMenuItem = new JCheckBoxMenuItem("Длина");
+		JCheckBoxMenuItem lineMenuItem = new JCheckBoxMenuItem("Длина");
 
 	    aListener = new ActionListener() {
 	      public void actionPerformed(ActionEvent event) {
 	    	  AbstractButton aButton = (AbstractButton) event.getSource();
-	    	  //MainRender.setMesurements(aButton.getModel().isSelected());
-	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected());
+	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected() ? MeasureType.LINE : null);
 	      }
 	    };
-	    mesureMenuItem.addActionListener(aListener);
-	    mesureMenu.add(mesureMenuItem);
+	    lineMenuItem.addActionListener(aListener);
+	    mesureMenu.add(lineMenuItem);
+	    
+	    JCheckBoxMenuItem ovalMenuItem = new JCheckBoxMenuItem("Овал");
+
+	    aListener = new ActionListener() {
+	      public void actionPerformed(ActionEvent event) {
+	    	  AbstractButton aButton = (AbstractButton) event.getSource();
+	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected() ? MeasureType.OVAL : null);
+	      }
+	    };
+	    ovalMenuItem.addActionListener(aListener);
+	    mesureMenu.add(ovalMenuItem);
 		
 		mesureMenu.setIcon(imageIcon);
 		menuBar.add(mesureMenu);
