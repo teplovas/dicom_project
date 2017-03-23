@@ -23,8 +23,7 @@ public class MeasurementsRender {
 	private static List<Measure> measurementsToDelete = new ArrayList<Measure>();
 	private static int curX = 0;
 	private static int curY = 0;
-	private static boolean isLineDrawing = false;
-	private static boolean isOvalDrawing = false;
+	private static boolean isObjectDrawing = false;
 	private static int disWidth;
 	private static int disHeight;
 	private static TrueTypeFont font;
@@ -88,21 +87,19 @@ public class MeasurementsRender {
 	
 	private static void doMouseClick(MeasureType type)
 	{
-		if(MeasureType.LINE == type)
-		{
 		if(Mouse.isButtonDown(0))
 		{
 			isMousePressed = true;
 			if(isMousePosChanged)
 			{
-				if(!isLineDrawing)
+				if(!isObjectDrawing)
 				{
 					curX = Mouse.getX();
 					curY = disHeight - Mouse.getY();
 				}
 				if(curX != Mouse.getX() && curY != Mouse.getY())
-				drawLine(curX, curY, Mouse.getX(), disHeight - Mouse.getY(), false);
-				isLineDrawing = true;
+				drawObject(type, curX, curY, Mouse.getX(), disHeight - Mouse.getY(), false);
+				isObjectDrawing = true;
 			}
 			if(beginPos == null)
 			{
@@ -120,74 +117,49 @@ public class MeasurementsRender {
 		{
 			if(isMousePosChanged)
 			{
-				if(isLineDrawing)
+				if(isObjectDrawing)
 				{
-					measurements.add(MeasureLine.createImgCoordMeasure(new Point(curX, curY), 
+					measurements.add(createMeasure(type, new Point(curX, curY), 
 							new Point(Mouse.getX(), disHeight - Mouse.getY())));
 				}
-				isLineDrawing = false;
+				isObjectDrawing = false;
 			}
 			else
 			{
-				checkLineClick();
+				checkObjectClick();
 			}
 			isMousePressed = false;
 			isMousePosChanged = false;
 			beginPos = null;
 		}
-		}
-		//===================================================
-		else
+	}
+	
+	private static void drawObject(MeasureType type, float fromX, float fromY, float toX, float toY, boolean isSelected)
+	{
+		if(MeasureType.LINE == type)
 		{
-			if(Mouse.isButtonDown(0))
-			{
-				isMousePressed = true;
-				if(isMousePosChanged)
-				{
-					if(!isOvalDrawing)
-					{
-						curX = Mouse.getX();
-						curY = disHeight - Mouse.getY();
-					}
-					if(curX != Mouse.getX() && curY != Mouse.getY())
-					drawOval(curX, curY, Mouse.getX(), disHeight - Mouse.getY(), false);
-					isOvalDrawing = true;
-				}
-				if(beginPos == null)
-				{
-					beginPos = new Point(Mouse.getX(), Mouse.getY());
-				}
-				else if(!isMousePosChanged)
-				{
-					if(beginPos.getX() != Mouse.getX() || beginPos.getY() != Mouse.getY())
-					{
-						isMousePosChanged = true;
-					}
-				}
-			}
-			else if(isMousePressed)
-			{
-				if(isMousePosChanged)
-				{
-					if(isOvalDrawing)
-					{
-						measurements.add(MeasureOval.createImgCoordMeasure(new Point(curX, curY), 
-								new Point(Mouse.getX(), disHeight - Mouse.getY())));
-					}
-					isOvalDrawing = false;
-				}
-				else
-				{
-					checkLineClick();
-				}
-				isMousePressed = false;
-				isMousePosChanged = false;
-				beginPos = null;
-			}	
+			drawLine(fromX, fromY, toX, toY, isSelected);
+		}
+		if(MeasureType.OVAL == type)
+		{
+			drawOval(fromX, fromY, toX, toY, isSelected);
 		}
 	}
 	
-	private static void checkLineClick()
+	private static Measure createMeasure(MeasureType type, Point from, Point to)
+	{
+		if(MeasureType.LINE == type)
+		{
+			return MeasureLine.createImgCoordMeasure(from, to);
+		}
+		if(MeasureType.OVAL == type)
+		{
+			return MeasureOval.createImgCoordMeasure(from, to);
+		}
+		return null;
+	}
+	
+	private static void checkObjectClick()
 	{
 		int mouseX = Mouse.getX();
 		int mouseY = Mouse.getY();
@@ -249,27 +221,31 @@ public class MeasurementsRender {
 		glLineWidth(1.5f);
 		glDisable(GL11.GL_TEXTURE_2D);
 		glDisable(GL11.GL_TEXTURE_1D);
-
-		glBegin(GL_LINE_LOOP);
-			if(isSelected)
-			{
-				glColor3f(1, 1, 0);
-			}
-			else
-			{
-				glColor3f(1, 0, 0);
-			}
+		if(isSelected)
+		{
+			glColor3f(1, 1, 0);
+		}
+		else
+		{
+			glColor3f(1, 0, 0);
+		}
 			
-			for(int i=0;i<360;i++)
-			   {
-			      float rad = i*DEG2RAD;
-			      glVertex2f((float)Math.cos(rad)*/*Math.abs*/(fromX - toX),
-			                  (float)Math.sin(rad)*/*Math.abs*/(fromY - toY));
-			   }
-		glEnd();
+		drawCircle(fromX, fromY, Math.abs(fromX - toX), Math.abs(fromY - toY), 360);
 		glEnable(GL_TEXTURE_1D);
 		glEnable(GL_TEXTURE_2D);
-		//glDisable(GL_LINE_SMOOTH);
+	}
+	
+	private static void drawCircle(float x, float y, float r1, float r2, int amountSegments)
+	{
+		glBegin(GL_LINE_LOOP);
+		for(int i = 0; i < amountSegments; i++)
+		{
+			float angle = 2.0f * 3.1415926f * (float)i / (float)amountSegments;
+			float dx = r1 * (float)Math.cos(angle);
+			float dy = r2 * (float)Math.sin(angle);
+			glVertex2f(x + dx, y + dy);
+		}
+		glEnd();
 	}
 	
 	
@@ -334,8 +310,19 @@ public class MeasurementsRender {
 
 		@Override
 		public boolean isMeasureSelected(int mouseX, int mouseY) {
-			// TODO Auto-generated method stub
-			return false;
+			float fromX = getPointScreenFrom().getX();
+			float fromY = disHeight - getPointScreenFrom().getY();
+			float toX = getPointScreenTo().getX();
+			float toY = disHeight - getPointScreenTo().getY();
+			
+			float r1 = Math.abs(fromX - toX);
+			float r2 = Math.abs(fromY - toY);
+			Point center = new Point(fromX + r1/2f, fromY + r2/2f);
+			
+			float minR = r1 < r2 ? r1 : r2;
+			float diffX = center.getX() - mouseX;
+			float diffY = center.getY() - mouseY;
+			return Math.sqrt(diffX * diffX + diffY * diffY) - minR <= MAX_DISTANCE;
 		}
 		
 	}
