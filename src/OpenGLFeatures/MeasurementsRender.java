@@ -39,7 +39,8 @@ public class MeasurementsRender {
 	public enum MeasureType
 	{
 		LINE,
-		OVAL;
+		OVAL,
+		NONE;
 	}	
 	
 	
@@ -68,7 +69,7 @@ public class MeasurementsRender {
 			m.print();
 		}
 		
-		if(type != null)
+		if(type != MeasureType.NONE)
 		{
 			doMouseClick(type);
 		}

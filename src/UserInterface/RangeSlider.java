@@ -1,4 +1,4 @@
-package OpenGLFeatures;
+package UserInterface;
 
 import java.awt.Color;
 import java.awt.Dimension;

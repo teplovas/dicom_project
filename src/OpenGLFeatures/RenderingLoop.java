@@ -249,7 +249,7 @@ public class RenderingLoop {
 	{
 		while (!Display.isCloseRequested()) {
 			Util.checkGLError();
-			if(measureType == null)
+			if(MeasureType.NONE == measureType)
 			{
 				checkMousePressed();
 			}

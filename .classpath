@@ -108,5 +108,9 @@
 	<classpathentry kind="lib" path="lib/syntheticaAluOxide.jar"/>
 	<classpathentry kind="lib" path="C:/Users/user/Downloads/synthetica_2.16.2_eval/synthetica.jar"/>
 	<classpathentry kind="lib" path="lib/slick-util.jar"/>
+	<classpathentry kind="lib" path="C:/Users/user/Downloads/dcm4che-tool-dcmrcv-2.0.25.jar/dcm4che-tool-dcmrcv-2.0.25.jar"/>
+	<classpathentry kind="lib" path="C:/Users/user/Downloads/dcm4che-net-2.0.25.jar/dcm4che-net-2.0.25.jar"/>
+	<classpathentry kind="lib" path="C:/Users/user/Downloads/dcm4che-filecache-2.0.25.jar/dcm4che-filecache-2.0.25.jar"/>
+	<classpathentry kind="lib" path="C:/Users/user/Downloads/dcm4che-tool-dcmqr-2.0.25.jar/dcm4che-tool-dcmqr-2.0.25.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

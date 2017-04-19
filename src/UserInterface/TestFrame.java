@@ -1,4 +1,4 @@
-package OpenGLFeatures;
+package UserInterface;
 
 import java.awt.BorderLayout;
 import java.awt.Button;
@@ -76,6 +76,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.eclipse.swt.internal.win32.MEASUREITEMSTRUCT;
 
 import Application.*;
+import OpenGLFeatures.RenderingLoop;
 import OpenGLFeatures.MeasurementsRender.MeasureType;
 import tools.DicomImage;
 import tools.ImageHelper;
@@ -184,22 +185,31 @@ public class TestFrame extends JFrame{
 		mesureMenu.setToolTipText("Измерения");
 		
 		JCheckBoxMenuItem lineMenuItem = new JCheckBoxMenuItem("Длина");
+		JCheckBoxMenuItem ovalMenuItem = new JCheckBoxMenuItem("Овал");
 
 	    aListener = new ActionListener() {
 	      public void actionPerformed(ActionEvent event) {
 	    	  AbstractButton aButton = (AbstractButton) event.getSource();
-	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected() ? MeasureType.LINE : null);
+	    	  boolean isSelected = aButton.getModel().isSelected();
+	    	  if(isSelected)
+	    	  {
+	    		  ovalMenuItem.setSelected(false);
+	    	  }
+	    	  RenderingLoop.setMesurements(isSelected ? MeasureType.LINE : MeasureType.NONE);
 	      }
 	    };
 	    lineMenuItem.addActionListener(aListener);
 	    mesureMenu.add(lineMenuItem);
-	    
-	    JCheckBoxMenuItem ovalMenuItem = new JCheckBoxMenuItem("Овал");
 
 	    aListener = new ActionListener() {
 	      public void actionPerformed(ActionEvent event) {
 	    	  AbstractButton aButton = (AbstractButton) event.getSource();
-	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected() ? MeasureType.OVAL : null);
+	    	  boolean isSelected = aButton.getModel().isSelected();
+	    	  if(isSelected)
+	    	  {
+	    		  lineMenuItem.setSelected(false);
+	    	  }
+	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected() ? MeasureType.OVAL : MeasureType.NONE);
 	      }
 	    };
 	    ovalMenuItem.addActionListener(aListener);
@@ -229,7 +239,7 @@ public class TestFrame extends JFrame{
 		rotateMenu.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				//MainRender.setRotate(true);
-				//RenderingLoop.setRotate(true);
+				RenderingLoop.setRotate(true);
 			}
 		});
 		imageIcon = new ImageIcon("res/rotateIcon.png");
@@ -276,6 +286,19 @@ public class TestFrame extends JFrame{
 		imageIcon = new ImageIcon("res/printIcon.png");
 		print.setIcon(imageIcon);
 		menuBar.add(print);
+		//================PACS-server==================================
+		JButton pacs = new JButton("");
+		pacs.setToolTipText("Загрузить с PACS-сервера");
+		pacs.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				ConnectPACSDialog dlg = new ConnectPACSDialog(TestFrame.this);
+				dlg.setSize(500, 500);
+			}
+		});
+		imageIcon = new ImageIcon("res/printIcon.png");
+		pacs.setIcon(imageIcon);
+		menuBar.add(pacs);
 		//===========================================================
 		
 	    this.setJMenuBar(menuBar);
