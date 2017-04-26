@@ -209,7 +209,7 @@ public class TestFrame extends JFrame{
 	    	  {
 	    		  lineMenuItem.setSelected(false);
 	    	  }
-	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected() ? MeasureType.OVAL : MeasureType.NONE);
+	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected() ? MeasureType.ELLIPSE : MeasureType.NONE);
 	      }
 	    };
 	    ovalMenuItem.addActionListener(aListener);

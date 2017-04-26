@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -15,9 +16,11 @@ import org.lwjgl.input.Keyboard;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.TrueTypeFont;
 
+import tools.DicomImage;
+
 public class MeasurementsRender {
 	
-	private final static double MAX_DISTANCE = 3d; 
+	private final static double MAX_DISTANCE = 3d;
 	private final static float DEG2RAD = 3.14159f/180.0f;
 	private static List<Measure> measurements = new ArrayList<Measure>();
 	private static List<Measure> measurementsToDelete = new ArrayList<Measure>();
@@ -35,13 +38,35 @@ public class MeasurementsRender {
 	private static int transformMatrixLocation = 0;
 	
 	private static int programId;
+	private static DicomImage img;
 	
 	public enum MeasureType
 	{
 		LINE,
-		OVAL,
-		NONE;
-	}	
+		ELLIPSE,
+		NONE,
+		;
+	}
+	
+	public enum EllipseParam
+	{
+		MIN("Min"),
+		MAX("Max"),
+		MEAN("Mean"),
+		AREA("Area"),
+		;
+		
+		private String name;
+		private EllipseParam(String name)
+		{
+			this.name = name;
+		}
+		
+		public String getName()
+		{
+			return name;
+		}
+	}
 	
 	
 	protected static void init(int disWidth, int disHeight, int pId)
@@ -57,6 +82,11 @@ public class MeasurementsRender {
 	{
 		Font awtFont = new Font("Times New Roman", Font.PLAIN, 14);
 		font = new TrueTypeFont(awtFont, true);
+	}
+	
+	public static void bindImage(DicomImage img)
+	{
+		MeasurementsRender.img = img;
 	}
 	
 	protected static void renderMeasurements(float scale, MeasureType type, FloatBuffer transformMatrix)
@@ -141,7 +171,7 @@ public class MeasurementsRender {
 		{
 			drawLine(fromX, fromY, toX, toY, isSelected);
 		}
-		if(MeasureType.OVAL == type)
+		if(MeasureType.ELLIPSE == type)
 		{
 			drawOval(fromX, fromY, toX, toY, isSelected);
 		}
@@ -153,9 +183,9 @@ public class MeasurementsRender {
 		{
 			return MeasureLine.createImgCoordMeasure(from, to);
 		}
-		if(MeasureType.OVAL == type)
+		if(MeasureType.ELLIPSE == type)
 		{
-			return MeasureOval.createImgCoordMeasure(from, to);
+			return MeasureEllipse.createImgCoordMeasure(from, to);
 		}
 		return null;
 	}
@@ -191,7 +221,7 @@ public class MeasurementsRender {
 	}
 	
 	
-	private static void drawLine(float fromX, float fromY, float toX, float toY, boolean isSelected)
+	public static void drawLine(float fromX, float fromY, float toX, float toY, boolean isSelected)
 	{
 		glLineWidth(1.5f);
 		glDisable(GL11.GL_TEXTURE_2D);
@@ -281,6 +311,31 @@ public class MeasurementsRender {
 		
 		public abstract void print();
 		
+		protected void printInfo(String text)
+		{
+			float x = getPointScreenTo().getX();
+			float y = getPointScreenTo().getY();
+			float w = text.length() * 7f;
+			float h = 20f;
+			
+			glBegin(GL_QUADS);
+				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
+				glVertex2f(x, y);
+		
+				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
+				glVertex2f(x + w, y);
+		
+				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
+				glVertex2f(x + w, y + h);
+		
+				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
+				glVertex2f(x, y + h);
+			glEnd();
+			glUseProgram(0);
+			Tools.renderString(text, getPointScreenTo().getX(), getPointScreenTo().getY(), Color.yellow, font);
+			glUseProgram(programId);
+		}
+		
 		public abstract boolean isMeasureSelected(int mouseX, int mouseY);
 	
 		public boolean isSelected() {
@@ -291,22 +346,48 @@ public class MeasurementsRender {
 		}
 	}
 	
-	private static class MeasureOval extends Measure
+	private static class MeasureEllipse extends Measure
 	{
-		public MeasureOval(Point from, Point to) {
+		private Map<EllipseParam, Float> paramsValues;
+		public MeasureEllipse(Point from, Point to) {
 			super(from, to);
 		}
 		
-		public static MeasureOval createImgCoordMeasure(Point from, Point to)
+		public static MeasureEllipse createImgCoordMeasure(Point from, Point to)
 		{
-			return new MeasureOval(Tools.convertToImageCoord(from), Tools.convertToImageCoord(to));
+			return new MeasureEllipse(Tools.convertToImageCoord(from), Tools.convertToImageCoord(to));
 		}
 
 		@Override
 		public void print() 
 		{
-			drawOval(getPointScreenFrom().getX(), getPointScreenFrom().getY(), 
-					getPointScreenTo().getX(), getPointScreenTo().getY(), isSelected());
+			float fromX = getPointScreenFrom().getX();
+			float fromY = getPointScreenFrom().getY();
+			float toX = getPointScreenTo().getX();
+			float toY = getPointScreenTo().getY();
+			drawOval(fromX, fromY, toX, toY, isSelected());
+//			float diffX = Math.abs((fromX - toX)/2);
+//			float diffY = Math.abs((fromY - toY)/2);
+			float diffX = Math.abs((fromX - toX));
+			float diffY = Math.abs((fromY - toY));
+			
+//			float sqr = (float)round(3.1415926f * Math.abs(diffX) * Math.abs(diffY)/100);
+//			sqr = pixelSpacing != null ? pixelSpacing * sqr : sqr;
+			//Point center = new Point(fromX + diffX, RenderingLoop.displayHeight - (fromY + diffY));
+			Point center = new Point(fromX, /*RenderingLoop.displayHeight - */fromY);
+			
+			paramsValues = Tools.calculateEllipseParams(img, center, diffX, diffY); 
+					//paramsValues == null ? Tools.calculateEllipseParams(img, center, diffX, diffY) :
+					//paramsValues;
+			StringBuilder infoText = new StringBuilder();
+			
+			for(EllipseParam param : EllipseParam.values())
+			{
+				infoText.append(param.getName() + ": " + paramsValues.get(param));
+				infoText.append(System.lineSeparator());
+			}
+			
+			printInfo(infoText.toString());
 		}
 
 		@Override
@@ -357,32 +438,13 @@ public class MeasurementsRender {
 			return getDistance(mouseX, mouseY, fromX, fromY, toX, toY) <= MAX_DISTANCE;
 		}
 		
+		@Override
 		public void print()
 		{
 			drawLine(getPointScreenFrom().getX(), getPointScreenFrom().getY(), 
 					getPointScreenTo().getX(), getPointScreenTo().getY(), isSelected());
-			float x = getPointScreenTo().getX();
-			float y = getPointScreenTo().getY();
 			String text = length + (pixelSpacing != null ? " cm" : " pxl");
-			float w = text.length() * 8f;
-			float h = 20f;
-			
-			glBegin(GL_QUADS);
-				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
-				glVertex2f(x, y);
-		
-				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
-				glVertex2f(x + w, y);
-		
-				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
-				glVertex2f(x + w, y + h);
-		
-				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
-				glVertex2f(x, y + h);
-			glEnd();
-			glUseProgram(0);
-			Tools.renderString(text, getPointScreenTo().getX(), getPointScreenTo().getY(), Color.yellow, font);
-			glUseProgram(programId);
+			printInfo(text);
 		}
 		
 		public Point getPointFrom() {

@@ -119,6 +119,7 @@ public class RenderingLoop {
 			isImageLoad = true;
 			isImageChanged = false;
 			setupMatrices(image.getWidth(), image.getHeight());
+			MeasurementsRender.bindImage(image);
 		}
 	}
 	
