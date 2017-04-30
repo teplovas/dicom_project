@@ -311,12 +311,14 @@ public class MeasurementsRender {
 		
 		public abstract void print();
 		
-		protected void printInfo(String text)
+		protected void printInfo(List<String> text)
 		{
 			float x = getPointScreenTo().getX();
 			float y = getPointScreenTo().getY();
-			float w = text.length() * 7f;
-			float h = 20f;
+			
+			int maxLen = text.stream().map(t -> t.length()).max(Integer::compare).get();
+			float w = maxLen * 7f;
+			float h = text.size() * 20f;
 			
 			glBegin(GL_QUADS);
 				glColor3f(135.0f/255.0f, 54.0f/255.0f, 54.0f/255.0f);
@@ -332,7 +334,14 @@ public class MeasurementsRender {
 				glVertex2f(x, y + h);
 			glEnd();
 			glUseProgram(0);
-			Tools.renderString(text, getPointScreenTo().getX(), getPointScreenTo().getY(), Color.yellow, font);
+			
+			int counter = 0;
+			for(String s : text)
+			{
+				Tools.renderString(s, getPointScreenTo().getX(), getPointScreenTo().getY() + counter * 20f, 
+						Color.yellow, font);
+				counter++;
+			}
 			glUseProgram(programId);
 		}
 		
@@ -376,18 +385,26 @@ public class MeasurementsRender {
 			//Point center = new Point(fromX + diffX, RenderingLoop.displayHeight - (fromY + diffY));
 			Point center = new Point(fromX, /*RenderingLoop.displayHeight - */fromY);
 			
-			paramsValues = Tools.calculateEllipseParams(img, center, diffX, diffY); 
-					//paramsValues == null ? Tools.calculateEllipseParams(img, center, diffX, diffY) :
-					//paramsValues;
-			StringBuilder infoText = new StringBuilder();
+			paramsValues = //Tools.calculateEllipseParams(img, center, diffX, diffY); 
+					paramsValues == null ? Tools.calculateEllipseParams(img, center, diffX, diffY) :
+					paramsValues;
+			List<String> infoText = new ArrayList<String>();
 			
 			for(EllipseParam param : EllipseParam.values())
 			{
-				infoText.append(param.getName() + ": " + paramsValues.get(param));
-				infoText.append(System.lineSeparator());
+				if(EllipseParam.AREA.equals(param))
+				{
+					float sqr = pixelSpacing != null ? pixelSpacing * paramsValues.get(param) : paramsValues.get(param);
+					infoText.add(param.getName() + ": " + sqr + " cm2");
+				}
+				else
+				{
+					infoText.add(param.getName() + ": " + paramsValues.get(param));
+				}
+//				infoText.append(System.lineSeparator());
 			}
 			
-			printInfo(infoText.toString());
+			printInfo(infoText);
 		}
 
 		@Override
@@ -444,7 +461,9 @@ public class MeasurementsRender {
 			drawLine(getPointScreenFrom().getX(), getPointScreenFrom().getY(), 
 					getPointScreenTo().getX(), getPointScreenTo().getY(), isSelected());
 			String text = length + (pixelSpacing != null ? " cm" : " pxl");
-			printInfo(text);
+			List<String> info = new ArrayList<String>();
+			info.add(text);
+			printInfo(info);
 		}
 		
 		public Point getPointFrom() {

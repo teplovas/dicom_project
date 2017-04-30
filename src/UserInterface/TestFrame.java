@@ -294,6 +294,12 @@ public class TestFrame extends JFrame{
 			{
 				ConnectPACSDialog dlg = new ConnectPACSDialog(TestFrame.this);
 				dlg.setSize(500, 500);
+				if(!dlg.isShowing())
+				{
+					List<DicomImage> imgs = dlg.getImage();
+					dicomImages.put("test", imgs.get(0));
+					showImage("test", true);
+				}
 			}
 		});
 		imageIcon = new ImageIcon("res/printIcon.png");

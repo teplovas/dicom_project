@@ -49,18 +49,18 @@ public class Tools {
 	}
 	
 	/**
-	 * Находится ли отрезок в эллипсе
+	 * Принадлежит ли точка эллипсу
 	 * @return
 	 */
-	public static boolean isSegmentInEllipse(Point elCenter, float a, float b, Point segTo)
+	public static boolean isPointInEllipse(Point elCenter, float a, float b, Point pointCoord)
 	{
 //		float ang = angle(elCenter.getX() + a, elCenter.getY(), segTo.getX(), segTo.getY());
 //		float curRadius = ellipseRadius(a, b, ang);
 //		float centerPointDistance = (float)Math.sqrt((elCenter.getX() - segTo.getX())*(elCenter.getX() - segTo.getX())
 //				+ (elCenter.getY() - segTo.getY())*(elCenter.getY() - segTo.getY()));
 //		return centerPointDistance <= curRadius;
-		float res = (((segTo.getX() - elCenter.getX())*(segTo.getX() - elCenter.getX())) / (a*a)) + 
-				(((segTo.getY() - elCenter.getY())*(segTo.getY() - elCenter.getY())) / (b*b)); 
+		float res = (((pointCoord.getX() - elCenter.getX())*(pointCoord.getX() - elCenter.getX())) / (a*a)) + 
+				(((pointCoord.getY() - elCenter.getY())*(pointCoord.getY() - elCenter.getY())) / (b*b)); 
 		return res < 1;
 	}
 	
@@ -70,6 +70,11 @@ public class Tools {
 				+ a*a*Math.sin(angle)*Math.sin(angle));
 	}
 	
+	/**
+	 * @param img - исходное изображение
+	 * @param elCenter - центр эллипса
+	 * @param a, b - радиусы
+	 */
 	public static Map<EllipseParam, Float> calculateEllipseParams(DicomImage img, 
 			Point elCenter, float a, float b)
 	{
@@ -80,7 +85,7 @@ public class Tools {
 		Object[] buffer = img.getImageBuffer();
 		System.out.println("center: x=" + elCenter.x + ", y=" + elCenter.y);
 		System.out.println("a=" + a + ", b=" + b);
-		elCenter = new Point(elCenter.getX(), elCenter.getY());		
+		//elCenter = new Point(elCenter.getX(), elCenter.getY());		
 		for(float y = 0; y < img.getHeight(); y++)
 			for(float x = 0; x < img.getWidth(); x++)
 			{
@@ -91,12 +96,12 @@ public class Tools {
 				Point screenCoord = convertToScreenCoord(new Point(scrX, scrY));
 				//MeasurementsRender.drawLine(elCenter.x, elCenter.y, scrX, scrY, false);
 				//System.out.println(screenCoord.x + ", " + screenCoord.y);
-				if(isSegmentInEllipse(elCenter, a, b, screenCoord))
+				if(isPointInEllipse(elCenter, a, b, screenCoord))
 				{
-					glBegin(GL_POINTS);
-					glColor3f((val/1023f), (val/1023f), (val/1023f));
-			        glVertex2f(screenCoord.x, screenCoord.y);
-			        glEnd();
+//					glBegin(GL_POINTS);
+//					glColor3f((val/1023f), (val/1023f), (val/1023f));
+//			        glVertex2f(screenCoord.x, screenCoord.y);
+//			        glEnd();
 					resMin = val < resMin ? val : resMin;
 					resMax = val > resMax ? val : resMax;
 					resMean += val;
@@ -104,7 +109,7 @@ public class Tools {
 				}
 			}
 		System.out.println("Counter = " + counter);
-		resArea = (float)round(3.1415926f * Math.abs(a) * Math.abs(b)/100);
+		resArea = (float)round(3.1415926f * Math.abs(a/2) * Math.abs(b/2)/100);
 		resMean /= counter;
 		
 		result.put(EllipseParam.AREA, resArea);
@@ -114,6 +119,7 @@ public class Tools {
 		return result;
 	}
 	
+	
 	protected static double round(double length)
 	{
 		return Math.round(length * 100.0) / 100.0;
@@ -121,8 +127,8 @@ public class Tools {
 	
 	public static Point convertToImageCoord(Point screenCoord)
 	{
-		float x = 2 * (screenCoord.getX()) / RenderingLoop.displayWidth - 1;
-		float y = 2 * (screenCoord.getY()) / RenderingLoop.displayHeight - 1;
+		float x = 2 * (screenCoord.getX() - ImageRender.getWShift()) / ImageRender.getWidth() - 1;
+		float y = 2 * (screenCoord.getY() - ImageRender.getHShift()) / ImageRender.getHeight() - 1;
 		Matrix4f mat = RenderingLoop.getTransformMatrix();
 		Matrix4f matInv = Matrix4f.invert(mat, null);
 		Vector4f res = Matrix4f.transform(matInv, new Vector4f(x, y, 0, 1), null);
@@ -135,8 +141,8 @@ public class Tools {
 		float x = imageCoord.getX();
 		float y = imageCoord.getY();
 		Vector4f res = Matrix4f.transform(RenderingLoop.getTransformMatrix(), new Vector4f(x, y, 0, 1), null);
-		x = (res.x + 1) * RenderingLoop.displayWidth/2;
-		y = (res.y + 1) * RenderingLoop.displayHeight/2;
+		x = (res.x + 1) * ImageRender.getWidth()/2 + ImageRender.getWShift();
+		y = (res.y + 1) * ImageRender.getHeight()/2 + ImageRender.getHShift();
 		return new Point(x, y);
 	}
 }

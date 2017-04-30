@@ -236,7 +236,7 @@ public class RenderingLoop {
 		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.z), new Vector3f(0, 0, 1), modelMatrix, modelMatrix);
 		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.y), new Vector3f(0, 1, 0), modelMatrix, modelMatrix);
 		Matrix4f.rotate(Tools.degreesToRadians(modelAngle.x), new Vector3f(1, 0, 0), modelMatrix, modelMatrix);
-
+		
 		transfMatrix = new Matrix4f();
 		Matrix4f.mul(projectionMatrix, viewMatrix, transfMatrix);
 		Matrix4f.mul(transfMatrix, modelMatrix, transfMatrix);

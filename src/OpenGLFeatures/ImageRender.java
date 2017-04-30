@@ -184,4 +184,12 @@ public class ImageRender {
 	public static int getWShift() {
 		return wShift;
 	}
+	
+	public static int getHeight() {
+		return scaleHeight;
+	}
+
+	public static int getWidth() {
+		return scaleWidth;
+	}
 }

@@ -152,16 +152,31 @@ public class ConvertTools {
 	
 	public static DicomImage readDicomFile(String fileName) throws IOException
 	{
-		DicomObject dcmObj = null;
 		DicomInputStream din = null;
-		Object[] data = null;
-		DicomImage dcmImg = new DicomImage();
-		Float pixelSpacing = null;
+		DicomImage dcmImg = null;
 		try{
 			//long start = System.currentTimeMillis();
 			din = new DicomInputStream(new File(fileName));
-			dcmObj = din.readDicomObject();
-			//System.out.print((System.currentTimeMillis() - start) + "\t");
+			dcmImg = createDicomImage(din.readDicomObject());
+			
+		}catch(Exception e)
+		{
+			System.out.println("ERROR: " + e.getMessage());
+		}
+		finally{
+			din.close();
+		}
+		return dcmImg;
+	}
+	
+	public static DicomImage createDicomImage(DicomObject dcmObj)
+	{
+		DicomImage dcmImg = new DicomImage();
+		try
+		{
+			Object[] data = null;
+			Float pixelSpacing = null;
+			
 			DicomElement photometricInterpretation = dcmObj
 					.get(Tag.PhotometricInterpretation);
 			//photometricInterpretation.getValueAsString(arg0, arg1)
@@ -243,9 +258,6 @@ public class ConvertTools {
 		}catch(Exception e)
 		{
 			System.out.println("ERROR: " + e.getMessage());
-		}
-		finally{
-			din.close();
 		}
 		return dcmImg;
 	}
