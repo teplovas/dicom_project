@@ -20,7 +20,7 @@ import tools.DicomImage;
 
 public class MeasurementsRender {
 	
-	private final static double MAX_DISTANCE = 3d;
+	private final static float MAX_DISTANCE = 3f;
 	private final static float DEG2RAD = 3.14159f/180.0f;
 	private static List<Measure> measurements = new ArrayList<Measure>();
 	private static List<Measure> measurementsToDelete = new ArrayList<Measure>();
@@ -214,10 +214,10 @@ public class MeasurementsRender {
 	}
 
 	
-	private static double getDistance(int x0, int y0, float x1, float y1, float x2, float y2)
+	private static float getDistance(int x0, int y0, float x1, float y1, float x2, float y2)
 	{
-		return Math.abs((y2 - y1)*x0 - (x2 - x1)*y0 + x2*y1 - y2*x1)/Math.sqrt((y2 - y1)*(y2 - y1) + 
-				(x2 - x1)*(x2 - x1));
+		return (float)(Math.abs((y2 - y1)*x0 - (x2 - x1)*y0 + x2*y1 - y2*x1)/Math.sqrt((y2 - y1)*(y2 - y1) + 
+				(x2 - x1)*(x2 - x1)));
 	}
 	
 	
@@ -374,15 +374,12 @@ public class MeasurementsRender {
 			float fromY = getPointScreenFrom().getY();
 			float toX = getPointScreenTo().getX();
 			float toY = getPointScreenTo().getY();
+			
 			drawOval(fromX, fromY, toX, toY, isSelected());
-//			float diffX = Math.abs((fromX - toX)/2);
-//			float diffY = Math.abs((fromY - toY)/2);
+			
 			float diffX = Math.abs((fromX - toX));
 			float diffY = Math.abs((fromY - toY));
 			
-//			float sqr = (float)round(3.1415926f * Math.abs(diffX) * Math.abs(diffY)/100);
-//			sqr = pixelSpacing != null ? pixelSpacing * sqr : sqr;
-			//Point center = new Point(fromX + diffX, RenderingLoop.displayHeight - (fromY + diffY));
 			Point center = new Point(fromX, /*RenderingLoop.displayHeight - */fromY);
 			
 			paramsValues = //Tools.calculateEllipseParams(img, center, diffX, diffY); 
@@ -401,7 +398,6 @@ public class MeasurementsRender {
 				{
 					infoText.add(param.getName() + ": " + paramsValues.get(param));
 				}
-//				infoText.append(System.lineSeparator());
 			}
 			
 			printInfo(infoText);
@@ -413,15 +409,13 @@ public class MeasurementsRender {
 			float fromY = disHeight - getPointScreenFrom().getY();
 			float toX = getPointScreenTo().getX();
 			float toY = disHeight - getPointScreenTo().getY();
+			float a = Math.abs((fromX - toX));
+			float b = Math.abs((fromY - toY));
 			
-			float r1 = Math.abs(fromX - toX);
-			float r2 = Math.abs(fromY - toY);
-			Point center = new Point(fromX + r1/2f, fromY + r2/2f);
-			
-			float minR = r1 < r2 ? r1 : r2;
-			float diffX = center.getX() - mouseX;
-			float diffY = center.getY() - mouseY;
-			return Math.sqrt(diffX * diffX + diffY * diffY) - minR <= MAX_DISTANCE;
+			Point center = new Point(fromX, fromY);
+			Point mouse = new Point(mouseX, mouseY);
+			return Tools.isPointInEllipse(center, a + MAX_DISTANCE, b + MAX_DISTANCE, mouse) 
+					&& Tools.isPointOutEllipse(center, a - MAX_DISTANCE, b - MAX_DISTANCE, mouse);
 		}
 		
 	}

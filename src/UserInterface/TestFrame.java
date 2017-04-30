@@ -185,7 +185,7 @@ public class TestFrame extends JFrame{
 		mesureMenu.setToolTipText("Измерения");
 		
 		JCheckBoxMenuItem lineMenuItem = new JCheckBoxMenuItem("Длина");
-		JCheckBoxMenuItem ovalMenuItem = new JCheckBoxMenuItem("Овал");
+		JCheckBoxMenuItem ellipseMenuItem = new JCheckBoxMenuItem("Эллипс");
 
 	    aListener = new ActionListener() {
 	      public void actionPerformed(ActionEvent event) {
@@ -193,7 +193,7 @@ public class TestFrame extends JFrame{
 	    	  boolean isSelected = aButton.getModel().isSelected();
 	    	  if(isSelected)
 	    	  {
-	    		  ovalMenuItem.setSelected(false);
+	    		  ellipseMenuItem.setSelected(false);
 	    	  }
 	    	  RenderingLoop.setMesurements(isSelected ? MeasureType.LINE : MeasureType.NONE);
 	      }
@@ -212,8 +212,8 @@ public class TestFrame extends JFrame{
 	    	  RenderingLoop.setMesurements(aButton.getModel().isSelected() ? MeasureType.ELLIPSE : MeasureType.NONE);
 	      }
 	    };
-	    ovalMenuItem.addActionListener(aListener);
-	    mesureMenu.add(ovalMenuItem);
+	    ellipseMenuItem.addActionListener(aListener);
+	    mesureMenu.add(ellipseMenuItem);
 		
 		mesureMenu.setIcon(imageIcon);
 		menuBar.add(mesureMenu);

@@ -54,14 +54,16 @@ public class Tools {
 	 */
 	public static boolean isPointInEllipse(Point elCenter, float a, float b, Point pointCoord)
 	{
-//		float ang = angle(elCenter.getX() + a, elCenter.getY(), segTo.getX(), segTo.getY());
-//		float curRadius = ellipseRadius(a, b, ang);
-//		float centerPointDistance = (float)Math.sqrt((elCenter.getX() - segTo.getX())*(elCenter.getX() - segTo.getX())
-//				+ (elCenter.getY() - segTo.getY())*(elCenter.getY() - segTo.getY()));
-//		return centerPointDistance <= curRadius;
 		float res = (((pointCoord.getX() - elCenter.getX())*(pointCoord.getX() - elCenter.getX())) / (a*a)) + 
 				(((pointCoord.getY() - elCenter.getY())*(pointCoord.getY() - elCenter.getY())) / (b*b)); 
 		return res < 1;
+	}
+	
+	public static boolean isPointOutEllipse(Point elCenter, float a, float b, Point pointCoord)
+	{
+		float res = (((pointCoord.getX() - elCenter.getX())*(pointCoord.getX() - elCenter.getX())) / (a*a)) + 
+				(((pointCoord.getY() - elCenter.getY())*(pointCoord.getY() - elCenter.getY())) / (b*b)); 
+		return res > 1;
 	}
 	
 	private static float ellipseRadius(float a, float b, float angle)
@@ -83,9 +85,6 @@ public class Tools {
 		int counter = 0;
 		
 		Object[] buffer = img.getImageBuffer();
-		System.out.println("center: x=" + elCenter.x + ", y=" + elCenter.y);
-		System.out.println("a=" + a + ", b=" + b);
-		//elCenter = new Point(elCenter.getX(), elCenter.getY());		
 		for(float y = 0; y < img.getHeight(); y++)
 			for(float x = 0; x < img.getWidth(); x++)
 			{
@@ -94,21 +93,14 @@ public class Tools {
 				float scrX = 2 * (x)/img.getWidth() - 1;
 				float scrY = 2 * (y)/img.getHeight() - 1;
 				Point screenCoord = convertToScreenCoord(new Point(scrX, scrY));
-				//MeasurementsRender.drawLine(elCenter.x, elCenter.y, scrX, scrY, false);
-				//System.out.println(screenCoord.x + ", " + screenCoord.y);
 				if(isPointInEllipse(elCenter, a, b, screenCoord))
 				{
-//					glBegin(GL_POINTS);
-//					glColor3f((val/1023f), (val/1023f), (val/1023f));
-//			        glVertex2f(screenCoord.x, screenCoord.y);
-//			        glEnd();
 					resMin = val < resMin ? val : resMin;
 					resMax = val > resMax ? val : resMax;
 					resMean += val;
 					counter++;
 				}
 			}
-		System.out.println("Counter = " + counter);
 		resArea = (float)round(3.1415926f * Math.abs(a/2) * Math.abs(b/2)/100);
 		resMean /= counter;
 		
